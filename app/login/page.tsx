@@ -4,23 +4,35 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
-import { Shield, User, ShieldCheck, HardHat } from 'lucide-react';
+import { Select } from '@/components/ui/Select';
+import { Shield, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loginAction } from '@/app/actions/auth';
 import { useToast } from '@/context/ToastContext';
-
-type UserRole = 'user' | 'agent' | 'admin';
+import { getCompanyOptions } from '@/lib/companies';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('user');
-  const [password, setPassword] = useState('password');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('user');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    if (!selectedCompany) {
+      toast('Please select a company', 'error');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!username) {
+      toast('Please enter your username', 'error');
+      setIsLoading(false);
+      return;
+    }
 
     if (password !== 'password') {
       toast('Invalid credentials. Hint: use "password"', 'error');
@@ -30,7 +42,8 @@ export default function LoginPage() {
 
     const formData = new FormData();
     formData.append('username', username);
-    formData.append('role', selectedRole);
+    formData.append('password', password);
+    formData.append('company', selectedCompany);
 
     const result = await loginAction(formData);
     if (result?.error) {
@@ -39,11 +52,6 @@ export default function LoginPage() {
     }
   };
 
-  const roleOptions = [
-    { id: 'user', label: 'End User', icon: User, desc: 'Raise & track tickets' },
-    { id: 'agent', label: 'Agent', icon: HardHat, desc: 'Manage your queue' },
-    { id: 'admin', label: 'Admin', icon: ShieldCheck, desc: 'Full system control' },
-  ];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-6">
@@ -59,41 +67,25 @@ export default function LoginPage() {
           <CardHeader className="space-y-2 p-10 text-center">
             <CardTitle className="text-3xl font-black tracking-tight">Welcome Back</CardTitle>
             <CardDescription className="text-base font-medium">
-              Select your role and sign in to continue.
+              Select your company and sign in to continue.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-10 pb-10 space-y-8">
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Role Selector */}
-              <div className="grid grid-cols-3 gap-3">
-                {roleOptions.map((role) => (
-                  <button
-                    key={role.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedRole(role.id as UserRole);
-                      setUsername(role.id);
-                      setPassword('password');
-                    }}
-                    className={cn(
-                      'flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-2 relative',
-                      selectedRole === role.id
-                        ? 'border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105'
-                        : 'border-border bg-card/50 hover:border-primary/30 text-muted-foreground'
-                    )}
-                  >
-                    {selectedRole === role.id && (
-                      <div className="absolute top-1 right-1">
-                        <ShieldCheck className="w-4 h-4" />
-                      </div>
-                    )}
-                    <role.icon className="w-5 h-5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{role.label}</span>
-                  </button>
-                ))}
-              </div>
-
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Company
+                  </label>
+                  <Select
+                    options={getCompanyOptions()}
+                    value={selectedCompany}
+                    onChange={setSelectedCompany}
+                    placeholder="Select your company"
+                    className="w-full"
+                  />
+                </div>
+
                 <Input
                   id="username"
                   label="Username"
