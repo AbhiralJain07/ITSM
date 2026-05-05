@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
-import { Shield, AlertCircle, User, ShieldCheck, HardHat } from 'lucide-react';
+import { Shield, User, ShieldCheck, HardHat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loginAction } from '@/app/actions/auth';
 import { useToast } from '@/context/ToastContext';
@@ -12,7 +12,7 @@ import { useToast } from '@/context/ToastContext';
 type UserRole = 'user' | 'agent' | 'admin';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('user@evolveitsm.com');
+  const [username, setUsername] = useState('user');
   const [password, setPassword] = useState('password');
   const [selectedRole, setSelectedRole] = useState<UserRole>('user');
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +29,7 @@ export default function LoginPage() {
     }
 
     const formData = new FormData();
-    formData.append('email', email);
+    formData.append('username', username);
     formData.append('role', selectedRole);
 
     const result = await loginAction(formData);
@@ -72,7 +72,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => {
                       setSelectedRole(role.id as UserRole);
-                      setEmail(`${role.id}@evolveitsm.com`);
+                      setUsername(role.id);
                       setPassword('password');
                     }}
                     className={cn(
@@ -95,17 +95,19 @@ export default function LoginPage() {
 
               <div className="space-y-4">
                 <Input
-                  label="Email Address"
-                  type="email"
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  label="Username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   autoComplete="username"
                   className="h-12 rounded-xl bg-background/50 border-none shadow-inner"
                 />
 
                 <Input
+                  id="password"
                   label="Password"
                   type="password"
                   placeholder="••••••••"

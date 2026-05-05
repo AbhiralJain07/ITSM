@@ -4,10 +4,11 @@ import { createSession, deleteSession, UserRole } from '@/lib/session';
 import { redirect } from 'next/navigation';
 
 export async function loginAction(formData: FormData) {
-  const usernameOrEmail = formData.get('email') as string;
+  const usernameOrEmail = (formData.get('username') ?? formData.get('email')) as string;
   const role = formData.get('role') as UserRole;
   
   // Extract name and ensure a valid email format for the session
+  if (!usernameOrEmail) return { error: 'Missing credentials' };
   const identifier = usernameOrEmail.split('@')[0];
   const name = identifier.charAt(0).toUpperCase() + identifier.slice(1);
   const finalEmail = usernameOrEmail.includes('@') ? usernameOrEmail : `${usernameOrEmail}@evolveitsm.com`;
