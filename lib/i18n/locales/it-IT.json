@@ -1,0 +1,64 @@
+{
+  "common": {
+    "loading": "Caricamento...",
+    "error": "Errore",
+    "success": "Successo",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "delete": "Elimina",
+    "edit": "Modifica",
+    "close": "Chiudi",
+    "confirm": "Conferma",
+    "back": "Indietro",
+    "next": "Successivo",
+    "submit": "Invia",
+    "search": "Cerca",
+    "filter": "Filtra",
+    "select": "Seleziona",
+    "clear": "Cancella"
+  },
+  "auth": {
+    "welcomeBack": "Bentornato",
+    "welcomeDescription": "Seleziona la tua azienda e accedi per continuare.",
+    "company": "Azienda",
+    "selectCompany": "Seleziona la tua azienda",
+    "username": "Nome Utente",
+    "usernamePlaceholder": "Inserisci il tuo nome utente",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Accedi",
+    "demoPassword": "Password Demo",
+    "invalidCredentials": "Credenziali non valide. Suggerimento: usa \"password\"",
+    "missingCredentials": "Credenziali mancanti",
+    "invalidPassword": "Password non valida",
+    "userNotFound": "Utente non trovato nell'azienda selezionata",
+    "selectCompanyError": "Seleziona un'azienda",
+    "enterUsername": "Inserisci il tuo nome utente"
+  },
+  "companies": {
+    "techcorp": "TechCorp Solutions",
+    "healthplus": "HealthPlus Medico",
+    "financehub": "FinanceHub Bancario",
+    "retailmax": "RetailMax Negozi"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "tickets": "Ticket",
+    "incidents": "Incidenti",
+    "analytics": "Analitiche",
+    "members": "Membri",
+    "settings": "Impostazioni",
+    "profile": "Profilo",
+    "knowledge": "Base di Conoscenza",
+    "logout": "Esci"
+  },
+  "language": {
+    "selectLanguage": "Seleziona Lingua",
+    "english": "English (United States)",
+    "dutch": "Nederlands (Nederland)",
+    "french": "français (France)",
+    "german": "Deutsch (Deutschland)",
+    "spanish": "Español (España)",
+    "italian": "Italiano (Italia)"
+  }
+}

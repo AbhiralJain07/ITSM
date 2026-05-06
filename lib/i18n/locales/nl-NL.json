@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Laden...",
+    "error": "Fout",
+    "success": "Succes",
+    "cancel": "Annuleren",
+    "save": "Opslaan",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "close": "Sluiten",
+    "confirm": "Bevestigen",
+    "back": "Terug",
+    "next": "Volgende",
+    "submit": "Indienen",
+    "search": "Zoeken",
+    "filter": "Filteren",
+    "select": "Selecteren",
+    "clear": "Wissen"
+  },
+  "auth": {
+    "welcomeBack": "Welkom Terug",
+    "welcomeDescription": "Selecteer uw bedrijf en meld u aan om door te gaan.",
+    "company": "Bedrijf",
+    "selectCompany": "Selecteer uw bedrijf",
+    "username": "Gebruikersnaam",
+    "usernamePlaceholder": "Voer uw gebruikersnaam in",
+    "password": "Wachtwoord",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Aanmelden",
+    "demoPassword": "Demo Wachtwoord",
+    "invalidCredentials": "Ongeldige inloggegevens. Hint: gebruik \"password\"",
+    "missingCredentials": "Inloggegevens ontbreken",
+    "invalidPassword": "Ongeldig wachtwoord",
+    "userNotFound": "Gebruiker niet gevonden in geselecteerd bedrijf",
+    "selectCompanyError": "Selecteer alstublieft een bedrijf",
+    "enterUsername": "Voer alstublieft uw gebruikersnaam in"
+  },
+  "companies": {
+    "techcorp": "TechCorp Solutions",
+    "healthplus": "HealthPlus Medisch",
+    "financehub": "FinanceHub Bankieren",
+    "retailmax": "RetailMax Winkels"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "tickets": "Tickets",
+    "incidents": "Incidenten",
+    "analytics": "Analytics",
+    "members": "Leden",
+    "settings": "Instellingen",
+    "profile": "Profiel",
+    "knowledge": "Kennisbank",
+    "logout": "Afmelden"
+  },
+  "language": {
+    "selectLanguage": "Selecteer Taal",
+    "english": "English (United States)",
+    "dutch": "Nederlands (Nederland)",
+    "french": "français (France)",
+    "german": "Deutsch (Deutschland)"
+  }
+}

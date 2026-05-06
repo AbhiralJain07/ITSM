@@ -31,6 +31,7 @@ import { useAuth } from '@/context/Providers';
 import { logoutAction } from '@/app/actions/auth';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { CompactLanguageSelector } from '@/components/ui/LanguageSelector';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -132,7 +133,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="flex flex-col"
             >
               <span className="text-xl font-black tracking-tighter text-gradient">EvolveITSM</span>
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Enterprise OS</span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Company OS</span>
             </motion.div>
           )}
         </div>
@@ -202,6 +203,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="rounded-xl hover:bg-background transition-all h-9 w-9">
                 {isDarkMode ? <Sun className="w-4 h-4 text-amber-500 fill-amber-500" /> : <Moon className="w-4 h-4" />}
               </Button>
+              
+              <div className="w-px h-6 bg-border/50" />
+              
+              <CompactLanguageSelector className="hover:bg-background rounded-xl transition-all" />
               
               <div className="relative" ref={notificationsRef}>
                 <Button 

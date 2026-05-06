@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Soumettre",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "select": "Sélectionner",
+    "clear": "Effacer"
+  },
+  "auth": {
+    "welcomeBack": "Bon Retour",
+    "welcomeDescription": "Sélectionnez votre entreprise et connectez-vous pour continuer.",
+    "company": "Entreprise",
+    "selectCompany": "Sélectionnez votre entreprise",
+    "username": "Nom d'utilisateur",
+    "usernamePlaceholder": "Entrez votre nom d'utilisateur",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Se Connecter",
+    "demoPassword": "Mot de passe Démo",
+    "invalidCredentials": "Identifiants invalides. Indice : utilisez \"password\"",
+    "missingCredentials": "Identifiants manquants",
+    "invalidPassword": "Mot de passe invalide",
+    "userNotFound": "Utilisateur non trouvé dans l'entreprise sélectionnée",
+    "selectCompanyError": "Veuillez sélectionner une entreprise",
+    "enterUsername": "Veuillez entrer votre nom d'utilisateur"
+  },
+  "companies": {
+    "techcorp": "TechCorp Solutions",
+    "healthplus": "HealthPlus Médical",
+    "financehub": "FinanceHub Bancaire",
+    "retailmax": "RetailMax Magasins"
+  },
+  "navigation": {
+    "dashboard": "Tableau de Bord",
+    "tickets": "Tickets",
+    "incidents": "Incidents",
+    "analytics": "Analytiques",
+    "members": "Membres",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "knowledge": "Base de Connaissances",
+    "logout": "Se Déconnecter"
+  },
+  "language": {
+    "selectLanguage": "Sélectionner la Langue",
+    "english": "English (United States)",
+    "dutch": "Nederlands (Nederland)",
+    "french": "français (France)",
+    "german": "Deutsch (Deutschland)"
+  }
+}

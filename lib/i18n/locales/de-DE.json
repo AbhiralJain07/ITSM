@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Laden...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "submit": "Absenden",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "select": "Auswählen",
+    "clear": "Löschen"
+  },
+  "auth": {
+    "welcomeBack": "Willkommen Zurück",
+    "welcomeDescription": "Wählen Sie Ihr Unternehmen und melden Sie sich an, um fortzufahren.",
+    "company": "Unternehmen",
+    "selectCompany": "Wählen Sie Ihr Unternehmen",
+    "username": "Benutzername",
+    "usernamePlaceholder": "Geben Sie Ihren Benutzernamen ein",
+    "password": "Passwort",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Anmelden",
+    "demoPassword": "Demo-Passwort",
+    "invalidCredentials": "Ungültige Anmeldeinformationen. Hinweis: Verwenden Sie \"password\"",
+    "missingCredentials": "Anmeldeinformationen fehlen",
+    "invalidPassword": "Ungültiges Passwort",
+    "userNotFound": "Benutzer im ausgewählten Unternehmen nicht gefunden",
+    "selectCompanyError": "Bitte wählen Sie ein Unternehmen",
+    "enterUsername": "Bitte geben Sie Ihren Benutzernamen ein"
+  },
+  "companies": {
+    "techcorp": "TechCorp Solutions",
+    "healthplus": "HealthPlus Medizinisch",
+    "financehub": "FinanceHub Bankwesen",
+    "retailmax": "RetailMax Geschäfte"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "tickets": "Tickets",
+    "incidents": "Vorfälle",
+    "analytics": "Analytik",
+    "members": "Mitglieder",
+    "settings": "Einstellungen",
+    "profile": "Profil",
+    "knowledge": "Wissensdatenbank",
+    "logout": "Abmelden"
+  },
+  "language": {
+    "selectLanguage": "Sprache Auswählen",
+    "english": "English (United States)",
+    "dutch": "Nederlands (Nederland)",
+    "french": "français (France)",
+    "german": "Deutsch (Deutschland)"
+  }
+}

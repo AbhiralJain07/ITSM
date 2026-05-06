@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "select": "Select",
+    "clear": "Clear"
+  },
+  "auth": {
+    "welcomeBack": "Welcome Back",
+    "welcomeDescription": "Select your company and sign in to continue.",
+    "company": "Company",
+    "selectCompany": "Select your company",
+    "username": "Username",
+    "usernamePlaceholder": "Enter your username",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Sign In",
+    "demoPassword": "Demo Password",
+    "invalidCredentials": "Invalid credentials. Hint: use \"password\"",
+    "missingCredentials": "Missing credentials",
+    "invalidPassword": "Invalid password",
+    "userNotFound": "User not found in selected company",
+    "selectCompanyError": "Please select a company",
+    "enterUsername": "Please enter your username"
+  },
+  "companies": {
+    "techcorp": "TechCorp Solutions",
+    "healthplus": "HealthPlus Medical",
+    "financehub": "FinanceHub Banking",
+    "retailmax": "RetailMax Stores"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "tickets": "Tickets",
+    "incidents": "Incidents",
+    "analytics": "Analytics",
+    "members": "Members",
+    "settings": "Settings",
+    "profile": "Profile",
+    "knowledge": "Knowledge Base",
+    "logout": "Logout"
+  },
+  "language": {
+    "selectLanguage": "Select Language",
+    "english": "English (United States)",
+    "dutch": "Nederlands (Nederland)",
+    "french": "français (France)",
+    "german": "Deutsch (Deutschland)"
+  }
+}

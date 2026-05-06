@@ -1,0 +1,64 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "select": "Seleccionar",
+    "clear": "Limpiar"
+  },
+  "auth": {
+    "welcomeBack": "Bienvenido de Nuevo",
+    "welcomeDescription": "Seleccione su empresa e inicie sesión para continuar.",
+    "company": "Empresa",
+    "selectCompany": "Seleccione su empresa",
+    "username": "Nombre de Usuario",
+    "usernamePlaceholder": "Ingrese su nombre de usuario",
+    "password": "Contraseña",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Iniciar Sesión",
+    "demoPassword": "Contraseña de Demostración",
+    "invalidCredentials": "Credenciales inválidas. Sugerencia: use \"password\"",
+    "missingCredentials": "Faltan credenciales",
+    "invalidPassword": "Contraseña inválida",
+    "userNotFound": "Usuario no encontrado en la empresa seleccionada",
+    "selectCompanyError": "Por favor seleccione una empresa",
+    "enterUsername": "Por favor ingrese su nombre de usuario"
+  },
+  "companies": {
+    "techcorp": "TechCorp Solutions",
+    "healthplus": "HealthPlus Médico",
+    "financehub": "FinanceHub Banca",
+    "retailmax": "RetailMax Tiendas"
+  },
+  "navigation": {
+    "dashboard": "Tablero",
+    "tickets": "Tickets",
+    "incidents": "Incidentes",
+    "analytics": "Analíticas",
+    "members": "Miembros",
+    "settings": "Configuración",
+    "profile": "Perfil",
+    "knowledge": "Base de Conocimiento",
+    "logout": "Cerrar Sesión"
+  },
+  "language": {
+    "selectLanguage": "Seleccionar Idioma",
+    "english": "English (United States)",
+    "dutch": "Nederlands (Nederland)",
+    "french": "français (France)",
+    "german": "Deutsch (Deutschland)",
+    "spanish": "Español (España)",
+    "italian": "Italiano (Italia)"
+  }
+}

@@ -119,7 +119,7 @@ export function Select({
           <div className="max-h-60 overflow-y-auto">
             {options.map((option, index) => (
               <button
-                key={option.value}
+                key={`${option.value}-${index}`}
                 type="button"
                 onClick={() => handleOptionClick(option.value)}
                 className={cn(

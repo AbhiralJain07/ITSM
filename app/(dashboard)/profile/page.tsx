@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Mail, 
@@ -12,7 +12,10 @@ import {
   Camera,
   CheckCircle,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  Building2,
+  Globe,
+  Users
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/Providers';
@@ -22,9 +25,80 @@ import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/context/ToastContext';
 
+interface ProfileData {
+  name: string;
+  email: string;
+  preferred_username: string;
+  given_name: string;
+  family_name: string;
+  email_verified: boolean;
+  realm_access: {
+    roles: string[];
+  };
+  resource_access: {
+    'winflow-wenodo': {
+      roles: string[];
+    };
+    account: {
+      roles: string[];
+    };
+  };
+}
+
 export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch profile data from production API
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const accessToken = sessionStorage.getItem('accessToken');
+        
+        if (!accessToken) {
+          console.log('No access token found, using session data');
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('Fetching profile data from production API...');
+        const response = await fetch('https://localhost:5001/api/v1/auth/me', {
+          method: 'GET',
+          headers: {
+            'accept': 'text/plain',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          let data;
+          
+          if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+          } else {
+            const text = await response.text();
+            data = JSON.parse(text);
+          }
+          
+          console.log('Profile data fetched:', data);
+          setProfileData(data);
+        } else {
+          console.error('Profile API error:', response.status);
+          toast('Failed to fetch profile data', 'error');
+        }
+      } catch (error) {
+        console.error('Profile fetch error:', error);
+        toast('Error fetching profile data', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, [toast]);
 
   const handleEditProfile = () => {
     toast("Opening profile editor...", "info");
@@ -98,9 +172,62 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Email Address</p>
-                    <p className="font-bold text-sm">{user?.email}</p>
+                    <p className="font-bold text-sm">
+                      {profileData?.email || user?.email}
+                      {profileData?.email_verified && (
+                        <CheckCircle className="w-3 h-3 text-green-500 inline ml-2" />
+                      )}
+                    </p>
                   </div>
                 </div>
+
+                <div className="flex items-center gap-4 group">
+                  <div className="p-3 bg-primary/5 text-primary rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Full Name</p>
+                    <p className="font-bold text-sm">
+                      {profileData?.name || user?.name}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 group">
+                  <div className="p-3 bg-primary/5 text-primary rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Username</p>
+                    <p className="font-bold text-sm">
+                      {profileData?.preferred_username || user?.name}
+                    </p>
+                  </div>
+                </div>
+
+                {profileData && (
+                  <>
+                    <div className="flex items-center gap-4 group">
+                      <div className="p-3 bg-primary/5 text-primary rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">First Name</p>
+                        <p className="font-bold text-sm">{profileData.given_name}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 group">
+                      <div className="p-3 bg-primary/5 text-primary rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Last Name</p>
+                        <p className="font-bold text-sm">{profileData.family_name}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="flex items-center gap-4 group">
                   <div className="p-3 bg-primary/5 text-primary rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
@@ -108,7 +235,7 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Employee ID</p>
-                    <p className="font-bold text-sm">EMP-2024-0{Math.floor(Math.random() * 900 + 100)}</p>
+                    <p className="font-bold text-sm">EMP-2024-0234</p>
                   </div>
                 </div>
 
@@ -138,9 +265,9 @@ export default function ProfilePage() {
           <Card className="border-none bg-primary text-primary-foreground shadow-2xl shadow-primary/20 rounded-[2.5rem] overflow-hidden relative">
             <CardContent className="p-8">
               <ShieldCheck className="w-12 h-12 mb-4 opacity-50" />
-              <h4 className="text-xl font-black mb-2">Verified Enterprise Account</h4>
-              <p className="text-sm font-medium opacity-80 leading-relaxed">
-                Your account is protected by enterprise-grade security protocols and 2FA.
+              <h4 className="text-xl font-black mb-2">Verified Company Account</h4>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Your account is protected by company-grade security protocols and 2FA.
               </p>
             </CardContent>
           </Card>

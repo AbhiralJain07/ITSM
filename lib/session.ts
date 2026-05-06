@@ -14,10 +14,11 @@ export interface SessionPayload {
     id: string;
     name: string;
   };
+  language?: string;
   expiresAt: Date;
 }
 
-export async function createSession(user: { id: string, name: string, email: string, role: UserRole, company?: { id: string, name: string } }) {
+export async function createSession(user: { id: string, name: string, email: string, role: UserRole, company?: { id: string, name: string }, language?: string }) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = JSON.stringify({ ...user, expiresAt });
   

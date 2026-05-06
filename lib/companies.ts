@@ -1,3 +1,5 @@
+import { fetchExternalCompanies } from './external-companies';
+
 export interface CompanyUser {
   username: string;
   role: 'user' | 'agent' | 'admin';
@@ -10,6 +12,7 @@ export interface Company {
   users: CompanyUser[];
 }
 
+// Default demo companies as fallback
 export const demoCompanies: Company[] = [
   {
     id: 'techcorp',
@@ -74,7 +77,23 @@ export function getUserRole(companyId: string, username: string): { role: 'user'
   };
 }
 
-export function getCompanyOptions() {
+export async function getCompanyOptions() {
+  try {
+    // Try to fetch companies from external API
+    const externalCompanies = await fetchExternalCompanies();
+    
+    if (externalCompanies.length > 0) {
+      console.log('Using external companies:', externalCompanies);
+      return externalCompanies.map(company => ({
+        value: company.id,
+        label: company.name
+      }));
+    }
+  } catch (error) {
+    console.warn('Failed to fetch external companies, using fallback:', error);
+  }
+  
+  // Fallback to demo companies
   return demoCompanies.map(company => ({
     value: company.id,
     label: company.name
