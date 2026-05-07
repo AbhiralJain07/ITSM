@@ -25,7 +25,8 @@ import {
   Users,
   BarChart3,
   Zap,
-  Info
+  Info,
+  Database
 } from 'lucide-react';
 import { useAuth } from '@/context/Providers';
 import { logoutAction } from '@/app/actions/auth';
@@ -72,6 +73,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       return [
         ...base,
         { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+        { label: 'Master Data', icon: Database, path: '/admin/master-data' },
         { label: 'Manage Users', icon: Users, path: '/admin/members' },
         { label: 'System Settings', icon: Settings, path: '/admin/settings' },
       ];
@@ -88,9 +90,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return [
       ...base,
-      { label: 'My Tickets', icon: Ticket, path: '/user/tickets' },
-      { label: 'New Request', icon: RefreshCw, path: '/user' },
-      { label: 'Help Center', icon: BookOpen, path: '/kb' },
+      { label: 'Create Ticket', icon: Ticket, path: '/user/create-ticket' },
+      { label: 'My Tickets', icon: ClipboardList, path: '/user/tickets' },
+      { label: 'Knowledge Base', icon: BookOpen, path: '/kb' },
     ];
   };
 

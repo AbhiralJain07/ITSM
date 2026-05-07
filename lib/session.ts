@@ -39,6 +39,9 @@ export async function getSession(): Promise<SessionPayload | null> {
   
   try {
     const payload = JSON.parse(session) as SessionPayload;
+    if (payload && typeof payload.expiresAt === 'string') {
+      return { ...payload, expiresAt: new Date(payload.expiresAt) };
+    }
     return payload;
   } catch (error) {
     return null;
