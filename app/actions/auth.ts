@@ -44,70 +44,34 @@ export async function loginAction(formData: FormData) {
   const companyId = formData.get('company') as string;
   const language = formData.get('language') as string;
   
-  console.log('Login attempt:', { username, companyId, password: '***' });
+  console.log('Simple login attempt:', { username, companyId });
   
-  // Basic validation
-  if (!username || !password || !companyId) {
-    return { error: 'Missing credentials' };
-  }
-
+  // For now, skip external API and create a basic session
   try {
-    // Try external API authentication first
-    let user = null;
-    
-    try {
-      console.log('Attempting external API authentication...');
-      const authResult = await authenticateWithExternalAPI({
-        realmName: companyId,
-        userName: username,
-        password: password
-      });
-      
-      console.log('External API result:', { success: authResult.success });
-      
-      if (authResult.success && authResult.user) {
-        user = authResult.user;
-        console.log('External API authentication successful');
-      }
-    } catch (apiError) {
-      const errorMessage = apiError instanceof Error ? apiError.message : 'Unknown API error';
-      console.warn('External API failed, using fallback:', errorMessage);
+    // Basic validation
+    if (!username || !password || !companyId) {
+      return { error: 'Missing credentials' };
     }
-    
-    // If external API failed, create basic user
-    if (!user) {
-      console.log('Using fallback authentication');
-      user = {
-        id: `${companyId}-${username}`,
-        name: username,
-        username: username,
-        role: 'admin' as UserRole,
-        email: `${username}@${companyId}.com`
-      };
-    }
-    
-    // Get company information
-    const company = getCompanyById(companyId);
-    
-    // Create session
+
+    // Create basic session for testing
     await createSession({
-      id: user.id,
-      name: user.name,
-      email: user.email || `${username}@${companyId}.com`,
-      role: user.role as UserRole,
+      id: 'test-user',
+      name: username,
+      email: `${username}@${companyId}.com`,
+      role: 'admin' as UserRole,
       company: {
         id: companyId,
-        name: company?.name || companyId
+        name: companyId
       },
-      language: language || 'en-US'
+      language: 'en-US'
     });
 
-    console.log('Session created, redirecting to:', `/${user.role}`);
-    return redirect(`/${user.role}`);
+    console.log('Basic session created, redirecting to admin');
+    return redirect('/admin');
     
   } catch (error) {
-    console.error('Login failed:', error);
-    return { error: 'Login failed. Please try again.' };
+    console.error('Simple login error:', error);
+    return { error: 'Login failed' };
   }
 }
 
