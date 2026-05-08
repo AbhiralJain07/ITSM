@@ -458,54 +458,65 @@ const handleSave = async () => {
       const accessToken = typeof window !== 'undefined'
         ? sessionStorage.getItem('accessToken') : null;
 
-      const categoryData = {
-        name: editingItem.name,
-        code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
-        departmentId: editingItem.departmentId,
-        isActive: editingItem.isActive
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
       };
 
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
-        },
-        body: JSON.stringify(categoryData)
-      });
+      const isNew = !categories.find(c => c.id === editingItem.id);
 
-      if (response.ok) {
-        toast('Category created successfully', 'success');
+      const res = await fetch(
+        isNew ? '/api/categories' : `/api/categories/${editingItem.id}`,
+        {
+          method: isNew ? 'POST' : 'PUT',
+          headers,
+          body: JSON.stringify({
+            name: editingItem.name,
+            code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
+            departmentId: editingItem.departmentId,
+            isActive: editingItem.isActive
+          })
+        }
+      );
+
+      if (res.ok) {
+        toast(isNew ? 'Category created successfully' : 'Category updated successfully', 'success');
         setIsEditing(false);
         setEditingItem(null);
         await fetchCategoriesFromAPI();
       } else {
-        const errorData = await response.json();
-        toast(errorData.error || 'Failed to create category', 'error');
+        const err = await res.json();
+        toast(err.error || 'Failed to save category', 'error');
       }
-
     } else if (activeTab === 'department') {
-      const accessToken = typeof window !== 'undefined'
-        ? sessionStorage.getItem('accessToken') : null;
+  const accessToken = typeof window !== 'undefined'
+    ? sessionStorage.getItem('accessToken') : null;
 
-      const res = await fetch('/api/departments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
-        },
-        body: JSON.stringify({ name: editingItem.name })
-      });
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
+  };
 
-      const result = await res.json();
-      if (result.success) {
-        toast('Department created successfully', 'success');
-        setIsEditing(false);
-        setEditingItem(null);
-        await fetchDepartmentsFromAPI();
-      } else {
-        toast(result.error || 'Failed to create department', 'error');
-      }
+  const isNew = !departments.find(d => d.id === editingItem.id);
+
+  const res = await fetch(
+    isNew ? '/api/departments' : `/api/departments/${editingItem.id}`,
+    {
+      method: isNew ? 'POST' : 'PUT',
+      headers,
+      body: JSON.stringify({ name: editingItem.name })
+    }
+  );
+
+  const result = await res.json();
+  if (result.success) {
+    toast(isNew ? 'Department created successfully' : 'Department updated successfully', 'success');
+    setIsEditing(false);
+    setEditingItem(null);
+    await fetchDepartmentsFromAPI();
+  } else {
+    toast(result.error || 'Failed to save department', 'error');
+  }
 
     } else {
       // Local state for other tabs
@@ -527,11 +538,45 @@ const handleSave = async () => {
   }
 };
 
-  const handleDelete = (id: string) => {
-    const data = getData();
-    setData(data.filter(item => item.id !== id));
-    toast('Item deleted successfully', 'success');
-  };
+  const handleDelete = async (id: string) => {
+  const accessToken = typeof window !== 'undefined'
+    ? sessionStorage.getItem('accessToken') : null;
+
+  if (activeTab === 'department') {
+    const res = await fetch(`/api/departments/${id}`, {
+      method: 'DELETE',
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
+    });
+    const result = await res.json();
+    if (result.success) {
+      toast('Department deleted successfully', 'success');
+      await fetchDepartmentsFromAPI();
+    } else {
+      toast(result.error || 'Failed to delete department', 'error');
+    }
+    return;
+  }
+
+  if (activeTab === 'category') {
+    const res = await fetch(`/api/categories/${id}`, {
+      method: 'DELETE',
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
+    });
+    const result = await res.json();
+    if (result.success) {
+      toast('Category deleted successfully', 'success');
+      await fetchCategoriesFromAPI();
+    } else {
+      toast(result.error || 'Failed to delete category', 'error');
+    }
+    return;
+  }
+
+  // Local state for other tabs
+  const data = getData();
+  setData(data.filter(item => item.id !== id));
+  toast('Item deleted successfully', 'success');
+};
 
   const toggleActive = (id: string) => {
     const data = getData();
@@ -677,12 +722,14 @@ const handleSave = async () => {
                 placeholder="Enter name"
                 required
               />
-              <Input
-                label="Code"
-                value={editingItem?.code || ''}
-                onChange={(e) => setEditingItem(editingItem ? { ...editingItem, code: e.target.value } : null)}
-                placeholder="Enter code (e.g., NETWORK)"
-              />
+              {activeTab !== 'department' && (
+  <Input
+    label="Code"
+    value={editingItem?.code || ''}
+    onChange={(e) => setEditingItem(editingItem ? { ...editingItem, code: e.target.value } : null)}
+    placeholder="Enter code (e.g., NETWORK)"
+  />
+)}
               {activeTab === 'category' ? (
   <div>
     <label className="text-sm font-medium mb-2 block">Department *</label>
