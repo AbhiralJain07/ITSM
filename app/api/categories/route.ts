@@ -3,7 +3,20 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     console.log('=== Categories API Called ===');
-    console.log('Fetching from production API: https://localhost:5001/api/v1/categories');
+    
+    // Get URL parameters to check for departmentId
+    const { searchParams } = new URL(request.url);
+    const departmentId = searchParams.get('departmentId');
+    
+    console.log('Department ID from params:', departmentId);
+    
+    // Build API URL with departmentId if provided
+    let apiUrl = 'https://localhost:5001/api/v1/categories';
+    if (departmentId) {
+      apiUrl += `?departmentId=${departmentId}`;
+    }
+    
+    console.log('Fetching from production API:', apiUrl);
     
     // Get authorization header from incoming request
     const authHeader = request.headers.get('authorization');
@@ -32,7 +45,6 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    const apiUrl = 'https://localhost:5001/api/v1/categories';
     const ignoreTls = process.env.CATEGORIES_API_IGNORE_TLS === 'true'
       || (process.env.NODE_ENV !== 'production' && apiUrl.startsWith('https://localhost'));
 

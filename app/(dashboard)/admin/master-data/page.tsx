@@ -52,7 +52,7 @@ interface MasterDataItem {
   subCategories?: any[];
 }
 
-const MasterDataPage = () => {
+export default function MasterDataPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('category');
   const [isEditing, setIsEditing] = useState(false);
@@ -83,9 +83,31 @@ const MasterDataPage = () => {
         console.log('Sending authorization token');
       }
       
-      console.log('Making request to /api/categories with headers:', headers);
+      // Get departmentId from session storage
+      let departmentId = '';
+      if (typeof window !== 'undefined') {
+        try {
+          const sessionData = sessionStorage.getItem('userSession');
+          if (sessionData) {
+            const session = JSON.parse(sessionData);
+            departmentId = session?.company?.id || '';
+          }
+        } catch (error) {
+          console.warn('Failed to parse session data:', error);
+        }
+      }
       
-      const response = await fetch('/api/categories', { headers });
+      console.log('User department ID:', departmentId);
+      
+      // Build URL with departmentId if available
+      let apiUrl = '/api/categories';
+      if (departmentId) {
+        apiUrl += `?departmentId=${departmentId}`;
+      }
+      
+      console.log('Making request to:', apiUrl, 'with headers:', headers);
+      
+      const response = await fetch(apiUrl, { headers });
       
       console.log('=== RESPONSE RECEIVED ===');
       console.log('Response status:', response.status);
@@ -214,11 +236,53 @@ const MasterDataPage = () => {
     { id: '3', name: 'Diwali', description: 'Festival of lights', date: '2024-11-01', isActive: true },
   ]);
 
-  const [departments, setDepartments] = useState<MasterDataItem[]>([
-    { id: '1', name: 'IT', description: 'Information Technology Department', isActive: true },
-    { id: '2', name: 'HR', description: 'Human Resources Department', isActive: true },
-    { id: '3', name: 'Finance', description: 'Finance Department', isActive: true },
-  ]);
+  // const [departments, setDepartments] = useState<MasterDataItem[]>([
+  //   { id: '1', name: 'IT', description: 'Information Technology Department', isActive: true },
+  //   { id: '2', name: 'HR', description: 'Human Resources Department', isActive: true },
+  //   { id: '3', name: 'Finance', description: 'Finance Department', isActive: true },
+  // ]);
+  const [departments, setDepartments] = useState<MasterDataItem[]>([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
+  const fetchDepartmentsFromAPI = async () => {
+  try {
+    setDepartmentsLoading(true);
+
+    // sessionStorage se token nikalo (tumhara login yehi use karta hai)
+    const accessToken = typeof window !== 'undefined'
+      ? sessionStorage.getItem('accessToken')
+      : null;
+
+    const res = await fetch('/api/departments', {
+      headers: accessToken ? {
+        'Authorization': `Bearer ${accessToken}`
+      } : {}
+    });
+
+    const result = await res.json();
+    console.log('Departments result:', result);
+
+    if (result.success) {
+  setDepartments(Array.isArray(result.data) ? result.data : []);
+}else {
+      toast('Failed to load departments: ' + result.error, 'error');
+    }
+  } catch (error) {
+    toast('Failed to load departments', 'error');
+  } finally {
+    setDepartmentsLoading(false);
+  }
+};
+
+  useEffect(() => {
+  if (activeTab === 'category') {
+    fetchCategoriesFromAPI();
+    fetchDepartmentsFromAPI(); // ← ye add karo
+  }
+  if (activeTab === 'department') {
+    fetchDepartmentsFromAPI();
+  }
+}, [activeTab]);
+
 
   const tabs = [
     { id: 'category', label: 'Category', icon: Tag },
@@ -250,9 +314,9 @@ const MasterDataPage = () => {
     const data = getData();
     
     let filtered = data.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      const matchesSearch = (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                            (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) || false);
-      const matchesActive = showInactive || item.isActive;
+      const matchesActive = showInactive || item.isActive !== false;
       return matchesSearch && matchesActive;
     });
 
@@ -342,6 +406,20 @@ const MasterDataPage = () => {
   };
 
   const handleAdd = () => {
+    // Get departmentId from session storage
+    let departmentId = '';
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionData = sessionStorage.getItem('userSession');
+        if (sessionData) {
+          const session = JSON.parse(sessionData);
+          departmentId = session?.company?.id || '';
+        }
+      } catch (error) {
+        console.warn('Failed to parse session data:', error);
+      }
+    }
+    
     const newItem: MasterDataItem = {
       id: Date.now().toString(),
       name: '',
@@ -352,7 +430,7 @@ const MasterDataPage = () => {
       categoryId: activeTab === 'subcategory' ? '' : undefined,
       categoryName: activeTab === 'subcategory' ? '' : undefined,
       code: activeTab === 'category' ? '' : undefined,
-      departmentId: activeTab === 'category' ? '' : undefined,
+      departmentId: departmentId, // Set default departmentId from session
       isActive: true,
     };
     setEditingItem(newItem);
@@ -364,94 +442,90 @@ const MasterDataPage = () => {
     setIsEditing(true);
   };
 
-  const handleSave = async () => {
-    console.log('=== HANDLE SAVE CALLED ===');
-    console.log('Active tab:', activeTab);
-    console.log('Editing item:', editingItem);
-    
-    if (!editingItem?.name.trim()) {
-      console.log('Name validation failed');
-      toast('Name is required', 'error');
-      return;
-    }
+const handleSave = async () => {
+  if (!editingItem?.name.trim()) {
+    toast('Name is required', 'error');
+    return;
+  }
 
-    console.log('Starting save process...');
-    try {
-      let result;
-      
-      if (activeTab === 'category') {
-        console.log('=== CATEGORY CREATION FLOW ===');
-        // Use real API for categories
-        const categoryData = {
-          name: editingItem.name,
-          code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
-          departmentId: editingItem.departmentId,
-          isActive: editingItem.isActive
-        };
-        
-        console.log('Category data to send:', categoryData);
+  if (activeTab === 'category' && !editingItem?.departmentId?.trim()) {
+    toast('Department ID is required for categories', 'error');
+    return;
+  }
 
-        if (editingItem.id === Date.now().toString()) {
-          console.log('=== CREATING NEW CATEGORY ===');
-          // Create new category
-          console.log('Making POST request to /api/categories');
-          
-          const response = await fetch('/api/categories', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(categoryData)
-          });
-          
-          console.log('POST response status:', response.status);
-          
-          if (response.ok) {
-            const result = await response.json();
-            console.log('Category creation response:', result);
-            toast('Category created successfully', 'success');
-            
-            // Close the edit form
-            setIsEditing(false);
-            setEditingItem(null);
-            
-            // Refresh categories from API
-            console.log('Refreshing categories after creation...');
-            await fetchCategoriesFromAPI();
-            console.log('Categories refreshed');
-          } else {
-            const errorData = await response.json();
-            console.error('Category creation error:', errorData);
-            toast(errorData.error || 'Failed to create category', 'error');
-            return;
-          }
-        } else {
-          console.log('=== UPDATING EXISTING CATEGORY ===');
-          // Update existing category (implement PUT endpoint if needed)
-          const data = getData();
-          setData(data.map(item => item.id === editingItem.id ? editingItem : item));
-          toast('Category updated successfully', 'success');
-        }
+  try {
+    if (activeTab === 'category') {
+      const accessToken = typeof window !== 'undefined'
+        ? sessionStorage.getItem('accessToken') : null;
+
+      const categoryData = {
+        name: editingItem.name,
+        code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
+        departmentId: editingItem.departmentId,
+        isActive: editingItem.isActive
+      };
+
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
+        },
+        body: JSON.stringify(categoryData)
+      });
+
+      if (response.ok) {
+        toast('Category created successfully', 'success');
+        setIsEditing(false);
+        setEditingItem(null);
+        await fetchCategoriesFromAPI();
       } else {
-        // Use local state for other master data
-        const data = getData();
-        if (editingItem.id === Date.now().toString()) {
-          // New item
-          setData([...data, editingItem]);
-          toast('Item added successfully', 'success');
-        } else {
-          // Update existing item
-          setData(data.map(item => item.id === editingItem.id ? editingItem : item));
-          toast('Item updated successfully', 'success');
-        }
+        const errorData = await response.json();
+        toast(errorData.error || 'Failed to create category', 'error');
       }
 
+    } else if (activeTab === 'department') {
+      const accessToken = typeof window !== 'undefined'
+        ? sessionStorage.getItem('accessToken') : null;
+
+      const res = await fetch('/api/departments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
+        },
+        body: JSON.stringify({ name: editingItem.name })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        toast('Department created successfully', 'success');
+        setIsEditing(false);
+        setEditingItem(null);
+        await fetchDepartmentsFromAPI();
+      } else {
+        toast(result.error || 'Failed to create department', 'error');
+      }
+
+    } else {
+      // Local state for other tabs
+      const data = getData();
+      const isNew = !data.find(item => item.id === editingItem.id);
+      if (isNew) {
+        setData([...data, editingItem]);
+      } else {
+        setData(data.map(item => item.id === editingItem.id ? editingItem : item));
+      }
+      toast('Item saved successfully', 'success');
       setIsEditing(false);
       setEditingItem(null);
-      
-    } catch (error) {
-      console.error('Save error:', error);
-      toast('Failed to save item', 'error');
     }
-  };
+
+  } catch (error) {
+    console.error('Save error:', error);
+    toast('Failed to save item', 'error');
+  }
+};
 
   const handleDelete = (id: string) => {
     const data = getData();
@@ -609,18 +683,26 @@ const MasterDataPage = () => {
                 onChange={(e) => setEditingItem(editingItem ? { ...editingItem, code: e.target.value } : null)}
                 placeholder="Enter code (e.g., NETWORK)"
               />
-              <Input
-                label="Department ID"
-                value={editingItem?.departmentId || ''}
-                onChange={(e) => setEditingItem(editingItem ? { ...editingItem, departmentId: e.target.value } : null)}
-                placeholder="Enter department ID (UUID)"
-              />
-              <Input
+              {activeTab === 'category' ? (
+  <div>
+    <label className="text-sm font-medium mb-2 block">Department *</label>
+    <Select
+      value={editingItem?.departmentId || ''}
+      onChange={(value) => setEditingItem(editingItem ? { ...editingItem, departmentId: value } : null)}
+      options={(Array.isArray(departments) ? departments : []).map(dept => ({
+        value: dept.id,
+        label: dept.name
+      }))}
+      placeholder="Select department"
+    />
+  </div>
+) : null}
+              {/* <Input
                 label="Description"
                 value={editingItem?.description || ''}
                 onChange={(e) => setEditingItem(editingItem ? { ...editingItem, description: e.target.value } : null)}
                 placeholder="Enter description"
-              />
+              /> */}
               
               {activeTab === 'subcategory' && (
                 <div>
@@ -717,7 +799,6 @@ const MasterDataPage = () => {
               </Button>
               <div className="flex-1 grid grid-cols-12 gap-4 text-sm font-medium text-muted-foreground">
                 <div className="col-span-3">Name</div>
-                <div className="col-span-3">Description</div>
                 {activeTab === 'subcategory' && (
                   <div className="col-span-2">Category</div>
                 )}
@@ -796,11 +877,11 @@ const MasterDataPage = () => {
                       </div>
 
                       {/* Description */}
-                      <div className="col-span-3">
+                      {/* <div className="col-span-3">
                         <p className="text-sm text-muted-foreground truncate">
                           {item.description || 'No description'}
                         </p>
-                      </div>
+                      </div> */}
 
                       {/* Category - Only for subcategory */}
                       {activeTab === 'subcategory' && item.categoryName && (
@@ -978,5 +1059,3 @@ const MasterDataPage = () => {
     </div>
   );
 };
-
-export default MasterDataPage;
