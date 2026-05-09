@@ -230,11 +230,7 @@ export default function MasterDataPage() {
     { id: '4', name: 'Self-Service Portal', description: 'Issues reported via portal', isActive: true },
   ]);
 
-  const [holidays, setHolidays] = useState<MasterDataItem[]>([
-    { id: '1', name: 'Republic Day', description: '26th January', date: '2024-01-26', isActive: true },
-    { id: '2', name: 'Holi', description: 'Festival of colors', date: '2024-03-25', isActive: true },
-    { id: '3', name: 'Diwali', description: 'Festival of lights', date: '2024-11-01', isActive: true },
-  ]);
+  const [holidays, setHolidays] = useState<MasterDataItem[]>([]);
 
   // const [departments, setDepartments] = useState<MasterDataItem[]>([
   //   { id: '1', name: 'IT', description: 'Information Technology Department', isActive: true },
@@ -945,6 +941,24 @@ if (activeTab === 'holiday') {
                   onChange={(e) => setEditingItem(editingItem ? { ...editingItem, date: e.target.value } : null)}
                 />
               )}
+
+              {/* {activeTab === 'holiday' && (
+  <Input
+    label="Date"
+    type="date"
+    value={editingItem?.date || ''}
+    onChange={(e) => setEditingItem(editingItem ? { ...editingItem, date: e.target.value } : null)}
+  />
+)} */}
+
+{activeTab === 'holiday' && (
+  <Input
+    label="Description"
+    value={editingItem?.description || ''}
+    onChange={(e) => setEditingItem(editingItem ? { ...editingItem, description: e.target.value } : null)}
+    placeholder="Enter holiday description"
+  />
+)}
 
               <div className="flex gap-2 pt-4">
                 <Button onClick={handleSave} className="gap-2">
