@@ -273,12 +273,36 @@ export default function MasterDataPage() {
   }
 };
 
-  useEffect(() => {
+const fetchSubcategoriesFromAPI = async () => {
+  try {
+    const accessToken = typeof window !== 'undefined'
+      ? sessionStorage.getItem('accessToken') : null;
+
+    const res = await fetch('/api/subcategories', {
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
+    });
+
+    const result = await res.json();
+    if (result.success) {
+      setSubcategories(Array.isArray(result.data) ? result.data : []);
+    }
+  } catch (error) {
+    toast('Failed to load subcategories', 'error');
+  }
+};
+
+
+useEffect(() => {
   if (activeTab === 'category') {
     fetchCategoriesFromAPI();
-    fetchDepartmentsFromAPI(); // ← ye add karo
+    fetchDepartmentsFromAPI();
   }
   if (activeTab === 'department') {
+    fetchDepartmentsFromAPI();
+  }
+  if (activeTab === 'subcategory') {
+    fetchSubcategoriesFromAPI();
+    fetchCategoriesFromAPI();
     fetchDepartmentsFromAPI();
   }
 }, [activeTab]);
@@ -572,6 +596,22 @@ const handleSave = async () => {
     return;
   }
 
+  if (activeTab === 'subcategory') {
+    const res = await fetch(`/api/subcategories/${id}`, {
+      method: 'DELETE',
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
+    });
+    const result = await res.json();
+    if (result.success) {
+      toast('Subcategory deleted successfully', 'success');
+      await fetchSubcategoriesFromAPI();
+    } else {
+      toast(result.error || 'Failed to delete subcategory', 'error');
+    }
+    return;
+  }
+
+
   // Local state for other tabs
   const data = getData();
   setData(data.filter(item => item.id !== id));
@@ -752,28 +792,44 @@ const handleSave = async () => {
               /> */}
               
               {activeTab === 'subcategory' && (
-                <div>
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                    Category *
-                  </label>
-                  <Select
-                    value={editingItem?.categoryId || ''}
-                    onChange={(value) => {
-                      const selectedCategory = categories.find(cat => cat.id === value);
-                      setEditingItem(editingItem ? { 
-                        ...editingItem, 
-                        categoryId: value,
-                        categoryName: selectedCategory?.name || ''
-                      } : null);
-                    }}
-                    options={categories.filter(cat => cat.isActive).map(item => ({
-                      value: item.id,
-                      label: item.name
-                    }))}
-                    placeholder="Select category"
-                  />
-                </div>
-              )}
+  <div>
+    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
+      Category *
+    </label>
+    <Select
+      value={editingItem?.categoryId || ''}
+      onChange={(value) => {
+        const selectedCategory = categories.find(cat => cat.id === value);
+        setEditingItem(editingItem ? { 
+          ...editingItem, 
+          categoryId: value,
+          categoryName: selectedCategory?.name || '',
+          departmentId: selectedCategory?.departmentId || editingItem.departmentId
+        } : null);
+      }}
+      options={categories.filter(cat => cat.isActive).map(item => ({
+        value: item.id,
+        label: item.name
+      }))}
+      placeholder="Select category"
+    />
+  </div>
+)}
+
+{activeTab === 'subcategory' && (
+  <div>
+    <label className="text-sm font-medium mb-2 block">Department *</label>
+    <Select
+      value={editingItem?.departmentId || ''}
+      onChange={(value) => setEditingItem(editingItem ? { ...editingItem, departmentId: value } : null)}
+      options={(Array.isArray(departments) ? departments : []).map(dept => ({
+        value: dept.id,
+        label: dept.name
+      }))}
+      placeholder="Select department"
+    />
+  </div>
+)}
               
               {(activeTab === 'priority') && (
                 <div className="grid grid-cols-2 gap-4">
