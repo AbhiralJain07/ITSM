@@ -453,8 +453,8 @@ useEffect(() => {
       date: activeTab === 'holiday' ? new Date().toISOString().split('T')[0] : undefined,
       categoryId: activeTab === 'subcategory' ? '' : undefined,
       categoryName: activeTab === 'subcategory' ? '' : undefined,
-      code: activeTab === 'category' ? '' : undefined,
-      departmentId: departmentId, // Set default departmentId from session
+      code: activeTab === 'category' || activeTab === 'subcategory' ? '' : undefined,
+      departmentId: activeTab === 'subcategory' ? '' : departmentId,
       isActive: true,
     };
     setEditingItem(newItem);
@@ -478,17 +478,16 @@ const handleSave = async () => {
   }
 
   try {
+    const accessToken = typeof window !== 'undefined'
+      ? sessionStorage.getItem('accessToken') : null;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
+    };
+
     if (activeTab === 'category') {
-      const accessToken = typeof window !== 'undefined'
-        ? sessionStorage.getItem('accessToken') : null;
-
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
-      };
-
       const isNew = !categories.find(c => c.id === editingItem.id);
-
       const res = await fetch(
         isNew ? '/api/categories' : `/api/categories/${editingItem.id}`,
         {
@@ -502,7 +501,6 @@ const handleSave = async () => {
           })
         }
       );
-
       if (res.ok) {
         toast(isNew ? 'Category created successfully' : 'Category updated successfully', 'success');
         setIsEditing(false);
@@ -512,35 +510,52 @@ const handleSave = async () => {
         const err = await res.json();
         toast(err.error || 'Failed to save category', 'error');
       }
+
     } else if (activeTab === 'department') {
-  const accessToken = typeof window !== 'undefined'
-    ? sessionStorage.getItem('accessToken') : null;
+      const isNew = !departments.find(d => d.id === editingItem.id);
+      const res = await fetch(
+        isNew ? '/api/departments' : `/api/departments/${editingItem.id}`,
+        {
+          method: isNew ? 'POST' : 'PUT',
+          headers,
+          body: JSON.stringify({ name: editingItem.name })
+        }
+      );
+      const result = await res.json();
+      if (result.success) {
+        toast(isNew ? 'Department created successfully' : 'Department updated successfully', 'success');
+        setIsEditing(false);
+        setEditingItem(null);
+        await fetchDepartmentsFromAPI();
+      } else {
+        toast(result.error || 'Failed to save department', 'error');
+      }
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
-  };
-
-  const isNew = !departments.find(d => d.id === editingItem.id);
-
-  const res = await fetch(
-    isNew ? '/api/departments' : `/api/departments/${editingItem.id}`,
-    {
-      method: isNew ? 'POST' : 'PUT',
-      headers,
-      body: JSON.stringify({ name: editingItem.name })
-    }
-  );
-
-  const result = await res.json();
-  if (result.success) {
-    toast(isNew ? 'Department created successfully' : 'Department updated successfully', 'success');
-    setIsEditing(false);
-    setEditingItem(null);
-    await fetchDepartmentsFromAPI();
-  } else {
-    toast(result.error || 'Failed to save department', 'error');
-  }
+    } else if (activeTab === 'subcategory') {
+      const isNew = !subcategories.find(s => s.id === editingItem.id);
+      const res = await fetch(
+        isNew ? '/api/subcategories' : `/api/subcategories/${editingItem.id}`,
+        {
+          method: isNew ? 'POST' : 'PUT',
+          headers,
+          body: JSON.stringify({
+            name: editingItem.name,
+            code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
+            categoryId: editingItem.categoryId,
+            departmentId: editingItem.departmentId,
+            isActive: editingItem.isActive
+          })
+        }
+      );
+      const result = await res.json();
+      if (result.success) {
+        toast(isNew ? 'Subcategory created successfully' : 'Subcategory updated successfully', 'success');
+        setIsEditing(false);
+        setEditingItem(null);
+        await fetchSubcategoriesFromAPI();
+      } else {
+        toast(result.error || 'Failed to save subcategory', 'error');
+      }
 
     } else {
       // Local state for other tabs
@@ -562,7 +577,7 @@ const handleSave = async () => {
   }
 };
 
-  const handleDelete = async (id: string) => {
+const handleDelete = async (id: string) => {
   const accessToken = typeof window !== 'undefined'
     ? sessionStorage.getItem('accessToken') : null;
 
@@ -610,7 +625,6 @@ const handleSave = async () => {
     }
     return;
   }
-
 
   // Local state for other tabs
   const data = getData();

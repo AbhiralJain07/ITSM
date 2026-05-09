@@ -4,6 +4,27 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 type Params = { params: Promise<{ id: string }> };
 
+export async function GET(request: NextRequest, { params }: Params) {
+  try {
+    const { id } = await params;
+    const token = request.cookies.get('access_token')?.value
+      || request.headers.get('authorization')?.replace('Bearer ', '');
+
+    if (!token) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+
+    const res = await fetch(`https://localhost:5001/api/v1/subcategories/${id}`, {
+      headers: { 'accept': 'application/json', 'Authorization': `Bearer ${token}` }
+    });
+
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : {};
+    return NextResponse.json({ success: true, data });
+
+  } catch (error) {
+    return NextResponse.json({ success: false, error: 'Failed to fetch subcategory' }, { status: 500 });
+  }
+}
+
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
