@@ -291,6 +291,25 @@ const fetchSubcategoriesFromAPI = async () => {
   }
 };
 
+const fetchHolidaysFromAPI = async () => {
+  try {
+    const accessToken = typeof window !== 'undefined'
+      ? sessionStorage.getItem('accessToken') : null;
+
+    const res = await fetch('/api/holidays', {
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
+    });
+
+    const result = await res.json();
+    if (result.success) {
+      setHolidays(Array.isArray(result.data) ? result.data : []);
+    }
+  } catch (error) {
+    toast('Failed to load holidays', 'error');
+  }
+};
+
+
 
 useEffect(() => {
   if (activeTab === 'category') {
@@ -304,6 +323,9 @@ useEffect(() => {
     fetchSubcategoriesFromAPI();
     fetchCategoriesFromAPI();
     fetchDepartmentsFromAPI();
+  }
+  if (activeTab === 'holiday') {  
+    fetchHolidaysFromAPI();
   }
 }, [activeTab]);
 
@@ -557,6 +579,31 @@ const handleSave = async () => {
         toast(result.error || 'Failed to save subcategory', 'error');
       }
 
+    } else if (activeTab === 'holiday') {
+      const isNew = !holidays.find(h => h.id === editingItem.id);
+      const res = await fetch(
+        isNew ? '/api/holidays' : `/api/holidays/${editingItem.id}`,
+        {
+          method: isNew ? 'POST' : 'PUT',
+          headers,
+          body: JSON.stringify({
+            name: editingItem.name,
+            date: editingItem.date,
+            description: editingItem.description || '',
+            isActive: editingItem.isActive
+          })
+        }
+      );
+      const result = await res.json();
+      if (result.success) {
+        toast(isNew ? 'Holiday created successfully' : 'Holiday updated successfully', 'success');
+        setIsEditing(false);
+        setEditingItem(null);
+        await fetchHolidaysFromAPI();
+      } else {
+        toast(result.error || 'Failed to save holiday', 'error');
+      }
+
     } else {
       // Local state for other tabs
       const data = getData();
@@ -622,6 +669,21 @@ const handleDelete = async (id: string) => {
       await fetchSubcategoriesFromAPI();
     } else {
       toast(result.error || 'Failed to delete subcategory', 'error');
+    }
+    return;
+  }
+
+if (activeTab === 'holiday') {
+    const res = await fetch(`/api/holidays/${id}`, {
+      method: 'DELETE',
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
+    });
+    const result = await res.json();
+    if (result.success) {
+      toast('Holiday deleted successfully', 'success');
+      await fetchHolidaysFromAPI();
+    } else {
+      toast(result.error || 'Failed to delete holiday', 'error');
     }
     return;
   }
