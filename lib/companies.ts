@@ -15,6 +15,16 @@ export interface Company {
 // Default demo companies as fallback
 export const demoCompanies: Company[] = [
   {
+    id: 'wenodo',
+    name: 'Wenodo',
+    users: [
+      { username: 'wenodoAdmin', role: 'admin', name: 'Wenodo Admin' },
+      { username: 'admin', role: 'admin', name: 'Admin User' },
+      { username: 'agent', role: 'agent', name: 'Support Agent' },
+      { username: 'user', role: 'user', name: 'Regular User' }
+    ]
+  },
+  {
     id: 'techcorp',
     name: 'TechCorp Solutions',
     users: [

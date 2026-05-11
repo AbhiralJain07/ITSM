@@ -19,15 +19,31 @@ export interface ExternalLoginResponse {
 
 export async function authenticateWithExternalAPI(request: ExternalLoginRequest): Promise<ExternalLoginResponse> {
   try {
-    // Revert to test endpoint for debugging
-    const response = await fetch('http://localhost:3000/api/test/login', {
+    // Use enterprise API with proper authentication
+    const baseUrl = process.env.AUTH_API_BASE_URL || 'https://localhost:5001/api/v1';
+    const apiKey = process.env.AUTH_API_KEY;
+    const timeout = parseInt(process.env.AUTH_API_TIMEOUT || '30000');
+
+    const headers: Record<string, string> = {
+      'accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+
+    // Add API key if available
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+      headers['X-API-Key'] = apiKey;
+    }
+
+    const response = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      headers,
+      body: JSON.stringify({
+        realmName: request.realmName,
+        userName: request.userName,
+        password: request.password
+      }),
+      signal: AbortSignal.timeout(timeout),
     });
 
     console.log('External auth response status:', response.status);
@@ -96,7 +112,47 @@ export async function authenticateWithExternalAPI(request: ExternalLoginRequest)
       error: 'Unknown authentication error'
     };
   } catch (error) {
-    console.error('External authentication error:', error);
+    console.error('Enterprise authentication error:', error);
+    
+    // Fallback to test endpoint for development if enterprise API is not available
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Falling back to test endpoint for development');
+      try {
+        const testResponse = await fetch('http://localhost:3000/api/test/login', {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
+          signal: AbortSignal.timeout(10000),
+        });
+
+        if (testResponse.ok) {
+          const testData = await testResponse.json();
+          if (testData.elements && testData.elements.accessToken) {
+            const elements = testData.elements;
+            
+            const user = {
+              id: elements.tenantInternalId || `${request.realmName}-${request.userName}`,
+              name: elements.displayName || elements.userName || request.userName,
+              username: elements.userName || request.userName,
+              role: mapRoleToSystemRole(elements.roles),
+              email: elements.email || `${request.userName}@${request.realmName}.com`
+            };
+            
+            return {
+              success: true,
+              token: elements.accessToken,
+              user: user
+            };
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Test endpoint fallback also failed:', fallbackError);
+      }
+    }
+    
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Authentication service unavailable'

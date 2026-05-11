@@ -44,34 +44,44 @@ export async function loginAction(formData: FormData) {
   const companyId = formData.get('company') as string;
   const language = formData.get('language') as string;
   
-  console.log('Simple login attempt:', { username, companyId });
+  console.log('Login attempt:', { username, companyId });
   
-  // For now, skip external API and create a basic session
   try {
     // Basic validation
     if (!username || !password || !companyId) {
-      return { error: 'Missing credentials' };
+      return { error: getServerTranslation('auth.missingCredentials', language) };
     }
 
-    // Create basic session for testing
+    // Authenticate with external API
+    const authResult = await authenticateWithExternalAPI({
+      realmName: companyId,
+      userName: username,
+      password: password
+    });
+
+    if (!authResult.success || !authResult.user) {
+      return { error: authResult.error || getServerTranslation('auth.invalidCredentials', language) };
+    }
+
+    // Create session with external API user data
     await createSession({
-      id: 'test-user',
-      name: username,
-      email: `${username}@${companyId}.com`,
-      role: 'admin' as UserRole,
+      id: authResult.user.id,
+      name: authResult.user.name,
+      email: authResult.user.email || `${username}@${companyId}.com`,
+      role: authResult.user.role as UserRole,
       company: {
         id: companyId,
         name: companyId
       },
-      language: 'en-US'
+      language: language || 'en-US'
     });
 
-    console.log('Basic session created, redirecting to admin');
-    return redirect('/admin');
+    console.log('Session created with external API, redirecting to', authResult.user.role);
+    return redirect(`/${authResult.user.role}`);
     
   } catch (error) {
-    console.error('Simple login error:', error);
-    return { error: 'Login failed' };
+    console.error('Login error:', error);
+    return { error: getServerTranslation('auth.invalidCredentials', language) };
   }
 }
 
