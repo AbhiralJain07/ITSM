@@ -1008,19 +1008,19 @@ if (activeTab === 'holiday') {
                             />
                           )}
                           <div>
-                            <h4 className="font-bold text-base">{item.name}</h4>
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                            <button
                               onClick={() => toggleExpanded(item.id)}
-                              className="p-0 h-auto text-sm text-muted-foreground hover:text-foreground font-medium"
+                              className="group/name flex items-center gap-1.5"
                             >
+                              <h4 className="font-bold text-base group-hover/name:text-primary transition-colors hover:underline underline-offset-4 decoration-primary/30">
+                                {item.name}
+                              </h4>
                               {isExpanded.includes(item.id) ? (
-                                <><EyeOff className="w-3 h-3 inline mr-1" /> Hide</>
+                                <ChevronUp className="w-4 h-4 text-muted-foreground group-hover/name:text-primary transition-colors" />
                               ) : (
-                                <><Eye className="w-3 h-3 inline mr-1" /> Details</>
+                                <ChevronDown className="w-4 h-4 text-muted-foreground group-hover/name:text-primary transition-colors" />
                               )}
-                            </Button>
+                            </button>
                           </div>
                         </div>
                       </div>
