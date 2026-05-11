@@ -39,20 +39,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   
   const { user } = useAuth();
   const pathname = usePathname();
-  const searchRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsSearchOpen(false);
-      }
+
       if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
         setIsNotificationsOpen(false);
       }
@@ -179,25 +174,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <header className="h-20 border-b border-border bg-card/30 backdrop-blur-2xl sticky top-0 z-30 px-4 lg:px-10 flex items-center justify-between gap-8">
-          <div className="flex items-center gap-6 flex-1 max-w-2xl">
+          <div className="flex items-center gap-6">
             <Button variant="ghost" size="icon" className="lg:hidden rounded-2xl bg-secondary/50" onClick={() => setIsMobileMenuOpen(true)}>
               <Menu className="w-6 h-6" />
             </Button>
-            
-            <div className="relative flex-1 hidden md:block" ref={searchRef}>
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <input
-                type="text"
-                placeholder="Search anything... (e.g. INC-102)"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setIsSearchOpen(true);
-                }}
-                onFocus={() => setIsSearchOpen(true)}
-                className="w-full bg-secondary/30 hover:bg-secondary/50 border border-border/50 rounded-2xl pl-12 pr-4 py-3 text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary/50 transition-all outline-none"
-              />
-            </div>
           </div>
 
           <div className="flex items-center gap-2 lg:gap-5">

@@ -27,7 +27,8 @@ import {
   ChevronUp,
   Check,
   Square,
-  MoreVertical
+  MoreVertical,
+  ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -54,7 +55,7 @@ interface MasterDataItem {
 
 export default function MasterDataPage() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('category');
+  const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingItem, setEditingItem] = useState<MasterDataItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,6 +64,7 @@ export default function MasterDataPage() {
   const [sortBy, setSortBy] = useState<'name' | 'level' | 'date'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [isExpanded, setIsExpanded] = useState<string[]>([]);
+  const [showModal, setShowModal] = useState(false);
 
   // Fetch real categories from API
   const fetchCategoriesFromAPI = async () => {
@@ -327,15 +329,15 @@ useEffect(() => {
 
 
   const tabs = [
-    { id: 'category', label: 'Category', icon: Tag },
-    { id: 'subcategory', label: 'Subcategory', icon: Subtitles },
-    { id: 'priority', label: 'Priority', icon: AlertTriangle },
-    { id: 'severity', label: 'Severity', icon: Activity },
-    { id: 'source', label: 'Source', icon: Mail },
-    { id: 'holiday', label: 'Holiday', icon: Calendar },
-    { id: 'department', label: 'Department', icon: Building },
-    { id: 'email', label: 'Email Config', icon: Settings },
-    { id: 'sla', label: 'SLA Config', icon: Clock },
+    { id: 'category', label: 'Category', icon: Tag, description: 'Manage ticket categories and classifications' },
+    { id: 'subcategory', label: 'Subcategory', icon: Subtitles, description: 'Manage nested subcategories for tickets' },
+    { id: 'priority', label: 'Priority', icon: AlertTriangle, description: 'Define SLA priorities and response times' },
+    { id: 'severity', label: 'Severity', icon: Activity, description: 'Manage incident severities and impact levels' },
+    { id: 'source', label: 'Source', icon: Mail, description: 'Configure ticket origin channels' },
+    { id: 'holiday', label: 'Holiday', icon: Calendar, description: 'Manage organizational holidays for SLA calculations' },
+    { id: 'department', label: 'Department', icon: Building, description: 'Manage company departments and groups' },
+    { id: 'email', label: 'Email Config', icon: Settings, description: 'Configure IMAP/SMTP settings for email integration' },
+    { id: 'sla', label: 'SLA Config', icon: Clock, description: 'Configure Service Level Agreements and rules' },
   ];
 
   const getData = () => {
@@ -476,12 +478,12 @@ useEffect(() => {
       isActive: true,
     };
     setEditingItem(newItem);
-    setIsEditing(true);
+    setShowModal(true);
   };
 
   const handleEdit = (item: MasterDataItem) => {
     setEditingItem({ ...item });
-    setIsEditing(true);
+    setShowModal(true);
   };
 
 const handleSave = async () => {
@@ -521,7 +523,7 @@ const handleSave = async () => {
       );
       if (res.ok) {
         toast(isNew ? 'Category created successfully' : 'Category updated successfully', 'success');
-        setIsEditing(false);
+        setShowModal(false);
         setEditingItem(null);
         await fetchCategoriesFromAPI();
       } else {
@@ -542,7 +544,7 @@ const handleSave = async () => {
       const result = await res.json();
       if (result.success) {
         toast(isNew ? 'Department created successfully' : 'Department updated successfully', 'success');
-        setIsEditing(false);
+        setShowModal(false);
         setEditingItem(null);
         await fetchDepartmentsFromAPI();
       } else {
@@ -568,7 +570,7 @@ const handleSave = async () => {
       const result = await res.json();
       if (result.success) {
         toast(isNew ? 'Subcategory created successfully' : 'Subcategory updated successfully', 'success');
-        setIsEditing(false);
+        setShowModal(false);
         setEditingItem(null);
         await fetchSubcategoriesFromAPI();
       } else {
@@ -593,7 +595,7 @@ const handleSave = async () => {
       const result = await res.json();
       if (result.success) {
         toast(isNew ? 'Holiday created successfully' : 'Holiday updated successfully', 'success');
-        setIsEditing(false);
+        setShowModal(false);
         setEditingItem(null);
         await fetchHolidaysFromAPI();
       } else {
@@ -610,7 +612,7 @@ const handleSave = async () => {
         setData(data.map(item => item.id === editingItem.id ? editingItem : item));
       }
       toast('Item saved successfully', 'success');
-      setIsEditing(false);
+      setShowModal(false);
       setEditingItem(null);
     }
 
@@ -731,102 +733,58 @@ if (activeTab === 'holiday') {
         {/* Header with Actions */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <h2 className="text-2xl font-bold">{activeTabData.label} Management</h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-4">
+            <Button
+              variant={showInactive ? "secondary" : "outline"}
+              onClick={() => setShowInactive(!showInactive)}
+              className="gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              {showInactive ? "Hide Inactive" : "Show Inactive"}
+            </Button>
             <Button onClick={handleAdd} className="gap-2">
               <Plus className="w-4 h-4" />
               Add {activeTabData.label}
             </Button>
-            <Button variant="outline" className="gap-2">
-              <Download className="w-4 h-4" />
-              Export
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <Upload className="w-4 h-4" />
-              Import
-            </Button>
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-4">
-              {/* Search */}
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    placeholder="Search items..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              {/* Filters */}
-              <div className="flex gap-2">
-                <Select
-                  value={sortBy}
-                  onChange={(value) => setSortBy(value as 'name' | 'level' | 'date')}
-                  options={[
-                    { value: 'name', label: 'Sort by Name' },
-                    { value: 'level', label: 'Sort by Level' },
-                    { value: 'date', label: 'Sort by Date' }
-                  ]}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  className="gap-1"
-                >
-                  {sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </Button>
-                <Button
-                  variant={showInactive ? "primary" : "outline"}
-                  size="sm"
-                  onClick={() => setShowInactive(!showInactive)}
-                  className="gap-1"
-                >
-                  <Eye className="w-4 h-4" />
-                  Inactive
-                </Button>
-              </div>
-            </div>
-
-            {/* Bulk Actions */}
-            {selectedItems.length > 0 && (
-              <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected
-                  </span>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={bulkToggleActive}>
-                      Toggle Active
-                    </Button>
-                    <Button variant="danger" size="sm" onClick={bulkDelete}>
-                      Delete Selected
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {isEditing && (
+        {/* Bulk Actions */}
+        {selectedItems.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                {editingItem?.id === Date.now().toString() ? 'Add New' : 'Edit'} {activeTabData.label}
-                <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected
+                </span>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={bulkToggleActive}>
+                    Toggle Active
+                  </Button>
+                  <Button variant="danger" size="sm" onClick={bulkDelete}>
+                    Delete Selected
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Modal for Add/Edit Item */}
+        {showModal && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-card text-card-foreground border border-border rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-border">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">
+                    Add/Edit {activeTabData.label}
+                  </h3>
+                  <Button variant="ghost" size="sm" onClick={() => setShowModal(false)} className="rounded-full w-8 h-8 p-0">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
               <Input
                 label="Name"
                 value={editingItem?.name || ''}
@@ -965,12 +923,13 @@ if (activeTab === 'holiday') {
                   <Save className="w-4 h-4" />
                   Save
                 </Button>
-                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                <Button variant="outline" onClick={() => setShowModal(false)}>
                   Cancel
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Data List */}
@@ -990,11 +949,8 @@ if (activeTab === 'holiday') {
                   <Square className="w-4 h-4" />
                 )}
               </Button>
-              <div className="flex-1 grid grid-cols-12 gap-4 text-sm font-medium text-muted-foreground">
-                <div className="col-span-3">Name</div>
-                {activeTab === 'subcategory' && (
-                  <div className="col-span-2">Category</div>
-                )}
+              <div className="flex-1 grid grid-cols-12 gap-4 text-base font-bold text-muted-foreground">
+                <div className={`${activeTab === 'priority' ? 'col-span-6' : (activeTab === 'holiday' || activeTab === 'severity') ? 'col-span-8' : 'col-span-10'}`}>Name</div>
                 {(activeTab === 'priority' || activeTab === 'severity') && (
                   <div className="col-span-2">Level</div>
                 )}
@@ -1004,7 +960,6 @@ if (activeTab === 'holiday') {
                 {activeTab === 'holiday' && (
                   <div className="col-span-2">Date</div>
                 )}
-                <div className="col-span-2">Status</div>
                 <div className="col-span-2">Actions</div>
               </div>
             </div>
@@ -1024,8 +979,9 @@ if (activeTab === 'holiday') {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="flex items-center gap-4 py-4 border-b last:border-b-0 hover:bg-muted/30 transition-colors"
+                    className="py-4 border-b last:border-b-0 hover:bg-muted/30 transition-colors"
                   >
+                    <div className="flex items-center gap-4">
                     {/* Checkbox */}
                     <Button
                       variant="ghost"
@@ -1043,7 +999,7 @@ if (activeTab === 'holiday') {
                     {/* Item Content */}
                     <div className="flex-1 grid grid-cols-12 gap-4 items-center">
                       {/* Name */}
-                      <div className="col-span-3">
+                      <div className={`${activeTab === 'priority' ? 'col-span-6' : (activeTab === 'holiday' || activeTab === 'severity') ? 'col-span-8' : 'col-span-10'}`}>
                         <div className="flex items-center gap-2">
                           {item.color && (
                             <div 
@@ -1052,12 +1008,12 @@ if (activeTab === 'holiday') {
                             />
                           )}
                           <div>
-                            <h4 className="font-medium">{item.name}</h4>
+                            <h4 className="font-bold text-base">{item.name}</h4>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => toggleExpanded(item.id)}
-                              className="p-0 h-auto text-xs text-muted-foreground hover:text-foreground"
+                              className="p-0 h-auto text-sm text-muted-foreground hover:text-foreground font-medium"
                             >
                               {isExpanded.includes(item.id) ? (
                                 <><EyeOff className="w-3 h-3 inline mr-1" /> Hide</>
@@ -1076,52 +1032,48 @@ if (activeTab === 'holiday') {
                         </p>
                       </div> */}
 
-                      {/* Category - Only for subcategory */}
-                      {activeTab === 'subcategory' && item.categoryName && (
-                        <div className="col-span-2">
-                          <Badge variant="outline" className="text-xs">
-                            {item.categoryName}
-                          </Badge>
-                        </div>
-                      )}
-
                       {/* Level */}
-                      {(activeTab === 'priority' || activeTab === 'severity') && item.level && (
+                      {(activeTab === 'priority' || activeTab === 'severity') && (
                         <div className="col-span-2">
-                          <Badge variant="secondary" className="text-xs">
-                            Level {item.level}
-                          </Badge>
+                          {item.level ? (
+                            <Badge variant="secondary" className="text-sm px-3 py-1">
+                              Level {item.level}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </div>
                       )}
 
                       {/* Color */}
-                      {activeTab === 'priority' && item.color && (
+                      {activeTab === 'priority' && (
                         <div className="col-span-2">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-4 h-4 rounded border" 
-                              style={{ backgroundColor: item.color }} 
-                            />
-                            <span className="text-xs font-mono">{item.color}</span>
-                          </div>
+                          {item.color ? (
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded border" 
+                                style={{ backgroundColor: item.color }} 
+                              />
+                              <span className="text-sm font-mono font-medium">{item.color}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </div>
                       )}
 
                       {/* Date */}
-                      {activeTab === 'holiday' && item.date && (
+                      {activeTab === 'holiday' && (
                         <div className="col-span-2">
-                          <Badge variant="outline" className="text-xs">
-                            {item.date}
-                          </Badge>
+                          {item.date ? (
+                            <Badge variant="outline" className="text-sm px-3 py-1">
+                              {item.date}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </div>
                       )}
-
-                      {/* Status */}
-                      <div className="col-span-2">
-                        <Badge variant={item.isActive ? "default" : "secondary"} className="text-xs">
-                          {item.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
 
                       {/* Actions */}
                       <div className="col-span-2">
@@ -1157,6 +1109,7 @@ if (activeTab === 'holiday') {
                         </div>
                       </div>
                     </div>
+                    </div>
 
                     {/* Expanded Details */}
                     {isExpanded.includes(item.id) && (
@@ -1164,35 +1117,45 @@ if (activeTab === 'holiday') {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="col-span-12 mt-4 p-4 bg-muted/20 rounded-lg"
+                        className="mt-4 ml-8 p-4 bg-muted/20 rounded-lg"
                       >
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="font-medium">ID:</span> {item.id}
+                        <div className="flex flex-col gap-5 text-base">
+                          <div className="flex flex-col gap-4">
+                            <div>
+                              <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">ID</span>
+                              <p className="font-mono mt-1 text-base">{item.id}</p>
+                            </div>
+                            {(activeTab === 'subcategory' && (item.categoryName || item.categoryId)) && (
+                              <div>
+                                <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Category</span>
+                                <p className="mt-1 text-base">{item.categoryName || categories.find(c => c.id === item.categoryId)?.name || '-'}</p>
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <span className="font-medium">Status:</span> {item.isActive ? 'Active' : 'Inactive'}
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-border/50">
+                            {item.level && (
+                              <div>
+                                <span className="font-medium text-muted-foreground text-sm uppercase tracking-wider">Level</span>
+                                <p className="mt-1 text-base">{item.level}</p>
+                              </div>
+                            )}
+                            {item.color && (
+                              <div>
+                                <span className="font-medium text-muted-foreground text-sm uppercase tracking-wider">Color</span>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                                  <span className="text-base">{item.color}</span>
+                                </div>
+                              </div>
+                            )}
+                            {item.date && (
+                              <div>
+                                <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Date</span>
+                                <p className="mt-1 text-base">{item.date}</p>
+                              </div>
+                            )}
                           </div>
-                          {item.level && (
-                            <div>
-                              <span className="font-medium">Level:</span> {item.level}
-                            </div>
-                          )}
-                          {item.color && (
-                            <div>
-                              <span className="font-medium">Color:</span> {item.color}
-                            </div>
-                          )}
-                          {item.date && (
-                            <div>
-                              <span className="font-medium">Date:</span> {item.date}
-                            </div>
-                          )}
-                          {item.categoryName && (
-                            <div>
-                              <span className="font-medium">Category:</span> {item.categoryName}
-                            </div>
-                          )}
                         </div>
                         {item.description && (
                           <div className="mt-4">
@@ -1215,40 +1178,50 @@ if (activeTab === 'holiday') {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
+        {activeTab && (
+          <Button variant="ghost" size="sm" onClick={() => setActiveTab(null)} className="mr-2">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back
+          </Button>
+        )}
         <Database className="w-8 h-8 text-primary" />
         <h1 className="text-3xl font-bold">Master Data</h1>
       </div>
 
-      <div className="border-b border-border">
-        <nav className="flex space-x-8">
+      {!activeTab ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
-              <button
-                key={tab.id}
+              <Card 
+                key={tab.id} 
+                className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50 group"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
               >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-              </button>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">{tab.label}</h3>
+                      <p className="text-sm text-muted-foreground">{tab.description}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
-        </nav>
-      </div>
-
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {renderContent()}
-      </motion.div>
+        </div>
+      ) : (
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {renderContent()}
+        </motion.div>
+      )}
     </div>
   );
 };
