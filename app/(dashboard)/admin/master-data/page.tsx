@@ -54,6 +54,18 @@ interface MasterDataItem {
   masterTypeId?: string;
 }
 
+const STATIC_TABS = [
+  { id: 'category', label: 'Category', icon: Tag, description: 'Manage ticket categories and classifications' },
+  { id: 'subcategory', label: 'Subcategory', icon: Subtitles, description: 'Manage nested subcategories for tickets' },
+  { id: 'priority', label: 'Priority', icon: AlertTriangle, description: 'Define SLA priorities and response times' },
+  { id: 'severity', label: 'Severity', icon: Activity, description: 'Manage incident severities and impact levels' },
+  { id: 'source', label: 'Source', icon: Mail, description: 'Configure ticket origin channels' },
+  { id: 'holiday', label: 'Holiday', icon: Calendar, description: 'Manage organizational holidays for SLA calculations' },
+  { id: 'department', label: 'Department', icon: Building, description: 'Manage company departments and groups' },
+  { id: 'email', label: 'Email Config', icon: Settings, description: 'Configure IMAP/SMTP settings for email integration' },
+  { id: 'sla', label: 'SLA Config', icon: Clock, description: 'Configure Service Level Agreements and rules' },
+];
+
 export default function MasterDataPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -77,14 +89,22 @@ export default function MasterDataPage() {
   const [holidays, setHolidays] = useState<MasterDataItem[]>([]);
   const [departments, setDepartments] = useState<MasterDataItem[]>([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
+  const [masterTypes, setMasterTypes] = useState<any[]>([]);
+  const [showMasterTypeModal, setShowMasterTypeModal] = useState(false);
+  const [editingMasterType, setEditingMasterType] = useState<any>(null);
+  const [dynamicItems, setDynamicItems] = useState<MasterDataItem[]>([]);
+  const [isMasterTypeLoading, setIsMasterTypeLoading] = useState(false);
 
   // ─── Fetch Functions ───────────────────────────────────────────────
 
   const getToken = () =>
     typeof window !== 'undefined' ? sessionStorage.getItem('accessToken') : null;
 
-  const authHeaders = (token: string | null) =>
-    token ? { 'Authorization': `Bearer ${token}` } : {};
+  const authHeaders = (token: string | null): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  };
 
   const fetchCategoriesFromAPI = async () => {
     try {
@@ -235,21 +255,84 @@ export default function MasterDataPage() {
     if (activeTab === 'source') {
       fetchSourcesFromAPI();
     }
+    
+    // Check if it's a dynamic master type
+    const isDynamic = !STATIC_TABS.some(t => t.id === activeTab) && activeTab !== null;
+    if (isDynamic) {
+      fetchMasterDataByTypeId(activeTab as string);
+    }
   }, [activeTab]);
+
+  const fetchMasterTypes = async () => {
+    try {
+      setIsMasterTypeLoading(true);
+      const token = getToken();
+      const res = await fetch('/api/mastertypes', { headers: authHeaders(token) });
+      const result = await res.json();
+      if (result.success) {
+        setMasterTypes(result.data || []);
+      }
+    } catch (error) {
+      toast('Failed to load master types', 'error');
+    } finally {
+      setIsMasterTypeLoading(false);
+    }
+  };
+
+  const fetchMasterDataByTypeId = async (typeId: string) => {
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/masterdata?masterTypeId=${typeId}`, {
+        headers: authHeaders(token)
+      });
+      const result = await res.json();
+      if (result.success) {
+        setDynamicItems(
+          result.data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description || '',
+            code: item.code,
+            level: item.sortOrder,
+            isActive: item.isActive,
+            masterTypeId: item.masterTypeId,
+            departmentId: item.departmentId
+          }))
+        );
+      }
+    } catch (error) {
+      toast('Failed to load items', 'error');
+    }
+  };
+
+  useEffect(() => {
+    fetchMasterTypes();
+  }, []);
 
   // ─── Tabs ─────────────────────────────────────────────────────────
 
-  const tabs = [
-    { id: 'category', label: 'Category', icon: Tag, description: 'Manage ticket categories and classifications' },
-    { id: 'subcategory', label: 'Subcategory', icon: Subtitles, description: 'Manage nested subcategories for tickets' },
-    { id: 'priority', label: 'Priority', icon: AlertTriangle, description: 'Define SLA priorities and response times' },
-    { id: 'severity', label: 'Severity', icon: Activity, description: 'Manage incident severities and impact levels' },
-    { id: 'source', label: 'Source', icon: Mail, description: 'Configure ticket origin channels' },
-    { id: 'holiday', label: 'Holiday', icon: Calendar, description: 'Manage organizational holidays for SLA calculations' },
-    { id: 'department', label: 'Department', icon: Building, description: 'Manage company departments and groups' },
-    { id: 'email', label: 'Email Config', icon: Settings, description: 'Configure IMAP/SMTP settings for email integration' },
-    { id: 'sla', label: 'SLA Config', icon: Clock, description: 'Configure Service Level Agreements and rules' },
-  ];
+  const allTabs = useMemo(() => {
+    const staticIds = STATIC_TABS.map(t => t.id);
+    const staticLabels = STATIC_TABS.map(t => t.label.toLowerCase());
+    
+    // Deduplicate by ID to prevent "unique key" warning
+    const dynamicMap = new Map();
+    
+    masterTypes.forEach(mt => {
+      if (mt && mt.id && !staticIds.includes(mt.id) && !staticLabels.includes(mt.name?.toLowerCase())) {
+        dynamicMap.set(mt.id, {
+          id: mt.id,
+          label: mt.name,
+          icon: Database,
+          description: `Manage ${mt.name} data items`,
+          isDynamic: true,
+          code: mt.code
+        });
+      }
+    });
+      
+    return [...STATIC_TABS, ...Array.from(dynamicMap.values())];
+  }, [masterTypes]);
 
   // ─── Data Helpers ─────────────────────────────────────────────────
 
@@ -262,7 +345,7 @@ export default function MasterDataPage() {
       case 'source': return sources;
       case 'holiday': return holidays;
       case 'department': return departments;
-      default: return [];
+      default: return dynamicItems;
     }
   };
 
@@ -354,6 +437,7 @@ export default function MasterDataPage() {
       code: activeTab === 'category' || activeTab === 'subcategory' || activeTab === 'priority' || activeTab === 'severity' || activeTab === 'source' ? '' : undefined,
       departmentId: activeTab === 'subcategory' ? '' : undefined,
       isActive: true,
+      masterTypeId: (allTabs.find(t => (t as any).id === activeTab && (t as any).isDynamic) ? activeTab : undefined) as string | undefined
     };
     setEditingItem(newItem);
     setShowModal(true);
@@ -526,6 +610,33 @@ export default function MasterDataPage() {
           toast(result.error || `Failed to save ${activeTab}`, 'error');
         }
 
+      // ── Dynamic MasterData ──
+      } else if (allTabs.find(t => (t as any).id === activeTab && (t as any).isDynamic)) {
+        const isNew = !dynamicItems.find(item => item.id === editingItem.id);
+        const res = await fetch(
+          isNew ? '/api/masterdata' : `/api/masterdata/${editingItem.id}`,
+          {
+            method: isNew ? 'POST' : 'PUT',
+            headers,
+            body: JSON.stringify({
+              masterTypeId: activeTab,
+              departmentId: editingItem.departmentId || (departments.length > 0 ? departments[0].id : undefined),
+              name: editingItem.name,
+              code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
+              sortOrder: editingItem.level || 0,
+              isActive: editingItem.isActive
+            })
+          }
+        );
+        const result = await res.json();
+        if (result.success) {
+          toast(isNew ? 'Item created successfully' : 'Item updated successfully', 'success');
+          setShowModal(false); setEditingItem(null);
+          await fetchMasterDataByTypeId(activeTab as string);
+        } else {
+          toast(result.error || 'Failed to save item', 'error');
+        }
+
       // ── Local state fallback ──
       } else {
         const data = getData();
@@ -581,16 +692,17 @@ export default function MasterDataPage() {
       return;
     }
 
-    if (activeTab === 'priority' || activeTab === 'severity' || activeTab === 'source') {
+    if (activeTab === 'priority' || activeTab === 'severity' || activeTab === 'source' || allTabs.find(t => (t as any).id === activeTab && (t as any).isDynamic)) {
       const res = await fetch(`/api/masterdata/${id}`, { method: 'DELETE', headers });
       const result = await res.json();
       if (result.success) {
-        toast(`${activeTab} deleted successfully`, 'success');
+        toast('Item deleted successfully', 'success');
         if (activeTab === 'priority') await fetchPrioritiesFromAPI();
         else if (activeTab === 'severity') await fetchSeveritiesFromAPI();
-        else await fetchSourcesFromAPI();
+        else if (activeTab === 'source') await fetchSourcesFromAPI();
+        else await fetchMasterDataByTypeId(activeTab as string);
       } else {
-        toast(result.error || `Failed to delete ${activeTab}`, 'error');
+        toast(result.error || 'Failed to delete item', 'error');
       }
       return;
     }
@@ -599,6 +711,69 @@ export default function MasterDataPage() {
     const data = getData();
     setData(data.filter(item => item.id !== id));
     toast('Item deleted successfully', 'success');
+  };
+
+  const handleSaveMasterType = async () => {
+    if (!editingMasterType?.name?.trim()) {
+      toast('Name is required', 'error');
+      return;
+    }
+
+    try {
+      const token = getToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        ...authHeaders(token)
+      };
+
+      const isNew = !masterTypes.find(mt => mt.id === editingMasterType.id);
+      const res = await fetch(
+        isNew ? '/api/mastertypes' : `/api/mastertypes/${editingMasterType.id}`,
+        {
+          method: isNew ? 'POST' : 'PUT',
+          headers,
+          body: JSON.stringify({
+            name: editingMasterType.name,
+            code: editingMasterType.code || editingMasterType.name?.toUpperCase().replace(/\s+/g, '_'),
+            isActive: true
+          })
+        }
+      );
+
+      if (res.ok) {
+        toast(isNew ? 'Master Type created successfully' : 'Master Type updated successfully', 'success');
+        setShowMasterTypeModal(false);
+        setEditingMasterType(null);
+        await fetchMasterTypes();
+      } else {
+        const err = await res.json();
+        toast(err.error || 'Failed to save master type', 'error');
+      }
+    } catch (error) {
+      toast('Failed to save master type', 'error');
+    }
+  };
+
+  const handleDeleteMasterType = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this Master Type? All associated data will be lost.')) return;
+
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/mastertypes/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(token)
+      });
+
+      if (res.ok) {
+        toast('Master Type deleted successfully', 'success');
+        await fetchMasterTypes();
+      } else {
+        const err = await res.json();
+        toast(err.error || 'Failed to delete master type', 'error');
+      }
+    } catch (error) {
+      toast('Failed to delete master type', 'error');
+    }
   };
 
   const toggleActive = (id: string) => {
@@ -610,7 +785,7 @@ export default function MasterDataPage() {
 
   const renderContent = () => {
     const filteredData = getFilteredData();
-    const activeTabData = tabs.find(tab => tab.id === activeTab);
+    const activeTabData = allTabs.find(tab => (tab as any).id === activeTab);
 
     if (!activeTabData) return <div>Tab not found</div>;
 
@@ -988,24 +1163,33 @@ export default function MasterDataPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        {activeTab && (
-          <Button variant="ghost" size="sm" onClick={() => setActiveTab(null)} className="mr-2">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {activeTab && (
+            <Button variant="ghost" size="sm" onClick={() => setActiveTab(null)} className="mr-2">
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back
+            </Button>
+          )}
+          <Database className="w-8 h-8 text-primary" />
+          <h1 className="text-3xl font-bold">Master Data</h1>
+        </div>
+        {!activeTab && (
+          <Button onClick={() => { setEditingMasterType(null); setShowMasterTypeModal(true); }} className="gap-2">
+            <Plus className="w-4 h-4" /> Add Master Type
           </Button>
         )}
-        <Database className="w-8 h-8 text-primary" />
-        <h1 className="text-3xl font-bold">Master Data</h1>
       </div>
 
       {!activeTab ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tabs.map((tab) => {
+          {allTabs.map((tab) => {
             const Icon = tab.icon;
+            const isTabDynamic = (tab as any).isDynamic;
+            
             return (
               <Card
                 key={tab.id}
-                className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50 group"
+                className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50 group relative overflow-hidden"
                 onClick={() => setActiveTab(tab.id)}
               >
                 <CardContent className="p-6">
@@ -1013,11 +1197,41 @@ export default function MasterDataPage() {
                     <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                       <Icon className="w-6 h-6" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-lg mb-1">{tab.label}</h3>
-                      <p className="text-sm text-muted-foreground">{tab.description}</p>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start pr-8">
+                        <h3 className="font-semibold text-lg mb-1">{tab.label}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{tab.description}</p>
                     </div>
                   </div>
+                  
+                  {isTabDynamic && (
+                    <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 hover:bg-primary/20"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingMasterType({ id: tab.id, name: tab.label, code: (tab as any).code });
+                          setShowMasterTypeModal(true);
+                        }}
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteMasterType(tab.id);
+                        }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -1032,6 +1246,42 @@ export default function MasterDataPage() {
         >
           {renderContent()}
         </motion.div>
+      )}
+
+      {/* Master Type Modal */}
+      {showMasterTypeModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-card text-card-foreground border border-border rounded-lg shadow-xl w-full max-w-md overflow-y-auto">
+            <div className="p-6 border-b border-border flex justify-between items-center">
+              <h3 className="text-lg font-semibold">{editingMasterType ? 'Edit' : 'Add'} Master Type</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowMasterTypeModal(false)} className="rounded-full w-8 h-8 p-0">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-6 space-y-4">
+              <Input
+                label="Name"
+                value={editingMasterType?.name || ''}
+                onChange={(e) => setEditingMasterType({ ...editingMasterType, name: e.target.value })}
+                placeholder="e.g. Incident Type"
+                required
+              />
+              <Input
+                label="Code"
+                value={editingMasterType?.code || ''}
+                onChange={(e) => setEditingMasterType({ ...editingMasterType, code: e.target.value })}
+                placeholder="e.g. INCIDENT_TYPE"
+              />
+              <div className="flex gap-2 pt-4">
+                <Button onClick={handleSaveMasterType} className="gap-2">
+                  <Save className="w-4 h-4" />
+                  Save
+                </Button>
+                <Button variant="outline" onClick={() => setShowMasterTypeModal(false)}>Cancel</Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
