@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('access_token')?.value
-      || request.headers.get('authorization')?.replace('Bearer ', '');
+  || request.headers.get('authorization')?.replace('Bearer ', '')
+  || request.headers.get('Authorization')?.replace('Bearer ', '');
 
     if (!token) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
 
