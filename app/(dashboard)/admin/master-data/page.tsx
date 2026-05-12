@@ -212,11 +212,7 @@ export default function MasterDataPage() {
     { id: '5', name: 'Application Crash', description: 'Application suddenly closing', isActive: true, categoryId: '3', categoryName: 'Software' },
   ]);
 
-  const [priorities, setPriorities] = useState<MasterDataItem[]>([
-    { id: '1', name: 'High', description: 'High priority issues', color: '#FF4444', level: 1, isActive: true },
-    { id: '2', name: 'Medium', description: 'Medium priority issues', color: '#FFA500', level: 2, isActive: true },
-    { id: '3', name: 'Low', description: 'Low priority issues', color: '#22C55E', level: 3, isActive: true },
-  ]);
+const [priorities, setPriorities] = useState<MasterDataItem[]>([]);
 
   const [severities, setSeverities] = useState<MasterDataItem[]>([
     { id: '1', name: 'Critical', description: 'Critical severity issues', level: 1, isActive: true },
@@ -307,6 +303,49 @@ const fetchHolidaysFromAPI = async () => {
   }
 };
 
+const fetchPrioritiesFromAPI = async () => {
+  try {
+    const accessToken = typeof window !== 'undefined'
+      ? sessionStorage.getItem('accessToken') : null;
+
+    // Pehle mastertypes se Priority ka ID nikalo
+    const typesRes = await fetch('/api/mastertypes', {
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
+    });
+    const typesResult = await typesRes.json();
+    const priorityType = typesResult.data?.find((t: any) => 
+      t.name?.toLowerCase() === 'priority' || t.code?.toLowerCase() === 'priority'
+    );
+
+    if (!priorityType) {
+      setPriorities([]);
+      return;
+    }
+
+    // Ab us ID se masterdata fetch karo
+    const res = await fetch(`/api/masterdata?masterTypeId=${priorityType.id}`, {
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
+    });
+
+    const result = await res.json();
+    if (result.success) {
+      const mapped = result.data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        code: item.code,
+        level: item.sortOrder,
+        isActive: item.isActive,
+        masterTypeId: item.masterTypeId,
+        departmentId: item.departmentId
+      }));
+      setPriorities(mapped);
+    }
+  } catch (error) {
+    toast('Failed to load priorities', 'error');
+  }
+};
+
 
 
 useEffect(() => {
@@ -325,6 +364,9 @@ useEffect(() => {
   if (activeTab === 'holiday') {  
     fetchHolidaysFromAPI();
   }
+  if (activeTab === 'priority') {
+  fetchPrioritiesFromAPI();
+}
 }, [activeTab]);
 
 
@@ -602,6 +644,45 @@ const handleSave = async () => {
         toast(result.error || 'Failed to save holiday', 'error');
       }
 
+      } else if (activeTab === 'priority') {
+  // Pehle Priority mastertype ka ID nikalo
+  const typesRes = await fetch('/api/mastertypes', { headers });
+  const typesResult = await typesRes.json();
+  const priorityType = typesResult.data?.find((t: any) =>
+    t.name?.toLowerCase() === 'priority' || t.code?.toLowerCase() === 'priority'
+  );
+
+  if (!priorityType) {
+    toast('Priority mastertype not found. Create it first.', 'error');
+    return;
+  }
+
+  const isNew = !priorities.find(p => p.id === editingItem.id);
+  const res = await fetch(
+    isNew ? '/api/masterdata' : `/api/masterdata/${editingItem.id}`,
+    {
+      method: isNew ? 'POST' : 'PUT',
+      headers,
+      body: JSON.stringify({
+        masterTypeId: priorityType.id,
+        departmentId: editingItem.departmentId || departments[0]?.id,
+        name: editingItem.name,
+        code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
+        sortOrder: editingItem.level || 0,
+        isActive: editingItem.isActive
+      })
+    }
+  );
+  const result = await res.json();
+  if (result.success) {
+    toast(isNew ? 'Priority created successfully' : 'Priority updated successfully', 'success');
+    setShowModal(false);
+    setEditingItem(null);
+    await fetchPrioritiesFromAPI();
+  } else {
+    toast(result.error || 'Failed to save priority', 'error');
+  }
+
     } else {
       // Local state for other tabs
       const data = getData();
@@ -685,6 +766,21 @@ if (activeTab === 'holiday') {
     }
     return;
   }
+
+  if (activeTab === 'priority') {
+  const res = await fetch(`/api/masterdata/${id}`, {
+    method: 'DELETE',
+    headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
+  });
+  const result = await res.json();
+  if (result.success) {
+    toast('Priority deleted successfully', 'success');
+    await fetchPrioritiesFromAPI();
+  } else {
+    toast(result.error || 'Failed to delete priority', 'error');
+  }
+  return;
+}
 
   // Local state for other tabs
   const data = getData();
