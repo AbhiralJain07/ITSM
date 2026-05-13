@@ -668,22 +668,33 @@ export default function MasterDataPage() {
                 )}
 
 {!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT', 'PRIORITY', 'SEVERITY', 'SOURCE', 'EMAIL_CONFIG', 'SLA_CONFIG'].includes(code || '') && (
-  <div>
-    <label className="text-sm font-medium mb-2 block">Category</label>
-    <Select
-      value={editingItem?.categoryId || ''}
-      onChange={(value) => {
-        const selectedCategory = categories.find(cat => cat.id === value);
-        setEditingItem(editingItem ? {
-          ...editingItem,
-          categoryId: value,
-          departmentId: (selectedCategory as any)?.departmentId || ''
-        } : null);
-      }}
-      options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
-      placeholder="Select category"
-    />
-  </div>
+  <>
+    <div>
+      <label className="text-sm font-medium mb-2 block">Category</label>
+      <Select
+        value={editingItem?.categoryId || ''}
+        onChange={(value) => {
+          const selectedCategory = categories.find(cat => cat.id === value);
+          setEditingItem(editingItem ? {
+            ...editingItem,
+            categoryId: value,
+            categoryName: selectedCategory?.name || '',
+            departmentId: (selectedCategory as any)?.departmentId || ''
+          } : null);
+        }}
+        options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+        placeholder="Select category"
+      />
+    </div>
+    {editingItem?.departmentId && (
+      <div>
+        <label className="text-sm font-medium mb-2 block">Department (Auto)</label>
+        <div className="px-3 py-2 rounded-md border border-border bg-muted text-sm">
+          {departments.find(d => d.id === editingItem.departmentId)?.name || '-'}
+        </div>
+      </div>
+    )}
+  </>
 )}
 
                 <div className="flex gap-2 pt-4">
@@ -819,11 +830,23 @@ export default function MasterDataPage() {
                               <p className="font-mono mt-1 text-base">{item.id}</p>
                             </div>
                             {code === 'SUBCATEGORY' && (item.categoryName || item.categoryId) && (
-                              <div>
-                                <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Category</span>
-                                <p className="mt-1 text-base">{item.categoryName || categories.find(c => c.id === item.categoryId)?.name || '-'}</p>
-                              </div>
-                            )}
+  <div>
+    <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Category</span>
+    <p className="mt-1 text-base">{item.categoryName || categories.find(c => c.id === item.categoryId)?.name || '-'}</p>
+  </div>
+)}
+{!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT', 'PRIORITY', 'SEVERITY', 'SOURCE', 'EMAIL_CONFIG', 'SLA_CONFIG'].includes(code || '') && item.categoryId && (
+  <div>
+    <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Category</span>
+    <p className="mt-1 text-base">{item.categoryName || categories.find(c => c.id === item.categoryId)?.name || '-'}</p>
+  </div>
+)}
+{!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT', 'PRIORITY', 'SEVERITY', 'SOURCE', 'EMAIL_CONFIG', 'SLA_CONFIG'].includes(code || '') && item.departmentId && (
+  <div>
+    <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Department</span>
+    <p className="mt-1 text-base">{departments.find(d => d.id === item.departmentId)?.name || '-'}</p>
+  </div>
+)}
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-border/50">
