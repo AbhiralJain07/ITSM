@@ -688,7 +688,7 @@ export default function MasterDataPage() {
     </div>
     {editingItem?.departmentId && (
       <div>
-        <label className="text-sm font-medium mb-2 block">Department (Auto)</label>
+        <label className="text-sm font-medium mb-2 block">Department</label>
         <div className="px-3 py-2 rounded-md border border-border bg-muted text-sm">
           {departments.find(d => d.id === editingItem.departmentId)?.name || '-'}
         </div>
