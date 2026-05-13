@@ -667,24 +667,24 @@ export default function MasterDataPage() {
                   </>
                 )}
 
-                {(code === 'PRIORITY' || code === 'SEVERITY') && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label="Level / Sort Order"
-                      type="number"
-                      value={editingItem?.level || 0}
-                      onChange={(e) => setEditingItem(editingItem ? { ...editingItem, level: parseInt(e.target.value) } : null)}
-                    />
-                    {code === 'PRIORITY' && (
-                      <Input
-                        label="Color"
-                        type="color"
-                        value={editingItem?.color || '#FF4444'}
-                        onChange={(e) => setEditingItem(editingItem ? { ...editingItem, color: e.target.value } : null)}
-                      />
-                    )}
-                  </div>
-                )}
+{!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT', 'PRIORITY', 'SEVERITY', 'SOURCE', 'EMAIL_CONFIG', 'SLA_CONFIG'].includes(code || '') && (
+  <div>
+    <label className="text-sm font-medium mb-2 block">Category</label>
+    <Select
+      value={editingItem?.categoryId || ''}
+      onChange={(value) => {
+        const selectedCategory = categories.find(cat => cat.id === value);
+        setEditingItem(editingItem ? {
+          ...editingItem,
+          categoryId: value,
+          departmentId: (selectedCategory as any)?.departmentId || ''
+        } : null);
+      }}
+      options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+      placeholder="Select category"
+    />
+  </div>
+)}
 
                 <div className="flex gap-2 pt-4">
                   <Button onClick={handleSave} className="gap-2">
