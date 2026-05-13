@@ -21,7 +21,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
+      // ✅ Tip: Backend body mein bhi 'id' expect kar sakta hai
       body: JSON.stringify({
+        id: id, 
         masterTypeId: body.masterTypeId,
         departmentId: body.departmentId,
         name: body.name,
@@ -31,10 +33,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
       })
     });
 
-    const text = await res.text();
-    let data = { success: true };
-    try { data = text ? JSON.parse(text) : { success: true }; } catch {}
-    return NextResponse.json({ success: true, data });
+    if (!res.ok) {
+      const errorText = await res.text();
+      return NextResponse.json({ success: false, error: errorText || 'Update failed' }, { status: res.status });
+    }
+
+    return NextResponse.json({ success: true });
 
   } catch (error) {
     return NextResponse.json({ success: false, error: 'Failed to update masterdata' }, { status: 500 });
@@ -52,15 +56,17 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const res = await fetch(`https://localhost:5001/api/v1/masterdata/${id}`, {
       method: 'DELETE',
       headers: {
-        'accept': 'application/json',
+        'accept': '*/*', // ✅ Accept anything
         'Authorization': `Bearer ${token}`
       }
     });
 
-    const text = await res.text();
-    let data = { success: true };
-    try { data = text ? JSON.parse(text) : { success: true }; } catch {}
-    return NextResponse.json({ success: true, data });
+    if (!res.ok) {
+      return NextResponse.json({ success: false, error: 'Delete operation failed' }, { status: res.status });
+    }
+
+    // ✅ Delete cases mein backend aksar body nahi bhejta, isliye sirf success return karein
+    return NextResponse.json({ success: true });
 
   } catch (error) {
     return NextResponse.json({ success: false, error: 'Failed to delete masterdata' }, { status: 500 });

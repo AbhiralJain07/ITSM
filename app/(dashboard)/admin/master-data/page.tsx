@@ -54,17 +54,30 @@ interface MasterDataItem {
   masterTypeId?: string;
 }
 
+// UI Metadata for known master types
 const STATIC_TABS = [
-  { id: 'category', label: 'Category', icon: Tag, description: 'Manage ticket categories and classifications' },
-  { id: 'subcategory', label: 'Subcategory', icon: Subtitles, description: 'Manage nested subcategories for tickets' },
-  { id: 'priority', label: 'Priority', icon: AlertTriangle, description: 'Define SLA priorities and response times' },
-  { id: 'severity', label: 'Severity', icon: Activity, description: 'Manage incident severities and impact levels' },
-  { id: 'source', label: 'Source', icon: Mail, description: 'Configure ticket origin channels' },
-  { id: 'holiday', label: 'Holiday', icon: Calendar, description: 'Manage organizational holidays for SLA calculations' },
-  { id: 'department', label: 'Department', icon: Building, description: 'Manage company departments and groups' },
-  { id: 'email', label: 'Email Config', icon: Settings, description: 'Configure IMAP/SMTP settings for email integration' },
-  { id: 'sla', label: 'SLA Config', icon: Clock, description: 'Configure Service Level Agreements and rules' },
+  { id: 'category', label: 'Category', icon: Tag, description: 'Manage ticket categories and classifications', code: 'CATEGORY' },
+  { id: 'subcategory', label: 'Subcategory', icon: Subtitles, description: 'Manage nested subcategories for tickets', code: 'SUBCATEGORY' },
+  { id: 'priority', label: 'Priority', icon: AlertTriangle, description: 'Define SLA priorities and response times', code: 'PRIORITY' },
+  { id: 'severity', label: 'Severity', icon: Activity, description: 'Manage incident severities and impact levels', code: 'SEVERITY' },
+  { id: 'source', label: 'Source', icon: Mail, description: 'Configure ticket origin channels', code: 'SOURCE' },
+  { id: 'holiday', label: 'Holiday', icon: Calendar, description: 'Manage organizational holidays for SLA calculations', code: 'HOLIDAY' },
+  { id: 'department', label: 'Department', icon: Building, description: 'Manage company departments and groups', code: 'DEPARTMENT' },
+  { id: 'email', label: 'Email Config', icon: Settings, description: 'Configure IMAP/SMTP settings for email integration', code: 'EMAIL_CONFIG' },
+  { id: 'sla', label: 'SLA Config', icon: Clock, description: 'Configure Service Level Agreements and rules', code: 'SLA_CONFIG' },
 ];
+
+const MASTER_TYPE_UI: Record<string, { icon: any, description: string }> = {
+  'CATEGORY': { icon: Tag, description: 'Manage ticket categories and classifications' },
+  'SUBCATEGORY': { icon: Subtitles, description: 'Manage nested subcategories for tickets' },
+  'PRIORITY': { icon: AlertTriangle, description: 'Define SLA priorities and response times' },
+  'SEVERITY': { icon: Activity, description: 'Manage incident severities and impact levels' },
+  'SOURCE': { icon: Mail, description: 'Configure ticket origin channels' },
+  'HOLIDAY': { icon: Calendar, description: 'Manage organizational holidays for SLA calculations' },
+  'DEPARTMENT': { icon: Building, description: 'Manage company departments and groups' },
+  'EMAIL_CONFIG': { icon: Settings, description: 'Configure IMAP/SMTP settings for email integration' },
+  'SLA_CONFIG': { icon: Clock, description: 'Configure Service Level Agreements and rules' },
+};
 
 export default function MasterDataPage() {
   const { toast } = useToast();
@@ -80,20 +93,14 @@ export default function MasterDataPage() {
   const [showModal, setShowModal] = useState(false);
 
   // States
-  const [categories, setCategories] = useState<MasterDataItem[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const [subcategories, setSubcategories] = useState<MasterDataItem[]>([]);
-  const [priorities, setPriorities] = useState<MasterDataItem[]>([]);
-  const [severities, setSeverities] = useState<MasterDataItem[]>([]);
-  const [sources, setSources] = useState<MasterDataItem[]>([]);
-  const [holidays, setHolidays] = useState<MasterDataItem[]>([]);
-  const [departments, setDepartments] = useState<MasterDataItem[]>([]);
-  const [departmentsLoading, setDepartmentsLoading] = useState(false);
   const [masterTypes, setMasterTypes] = useState<any[]>([]);
+  const [masterItems, setMasterItems] = useState<MasterDataItem[]>([]);
+  const [departments, setDepartments] = useState<MasterDataItem[]>([]);
+  const [categories, setCategories] = useState<MasterDataItem[]>([]);
+  
+  const [isLoading, setIsLoading] = useState(false);
   const [showMasterTypeModal, setShowMasterTypeModal] = useState(false);
   const [editingMasterType, setEditingMasterType] = useState<any>(null);
-  const [dynamicItems, setDynamicItems] = useState<MasterDataItem[]>([]);
-  const [isMasterTypeLoading, setIsMasterTypeLoading] = useState(false);
 
   // ─── Fetch Functions ───────────────────────────────────────────────
 
@@ -106,166 +113,9 @@ export default function MasterDataPage() {
     return headers;
   };
 
-  const fetchCategoriesFromAPI = async () => {
-    try {
-      setCategoriesLoading(true);
-      const token = getToken();
-      const res = await fetch('/api/categories', { headers: authHeaders(token) });
-      const result = await res.json();
-      if (result.success) {
-        setCategories(Array.isArray(result.data) ? result.data : []);
-      } else {
-        toast(result.error || 'Failed to load categories', 'error');
-        setCategories([]);
-      }
-    } catch (error) {
-      toast('Failed to load categories', 'error');
-      setCategories([]);
-    } finally {
-      setCategoriesLoading(false);
-    }
-  };
-
-  const fetchDepartmentsFromAPI = async () => {
-    try {
-      setDepartmentsLoading(true);
-      const token = getToken();
-      const res = await fetch('/api/departments', { headers: authHeaders(token) });
-      const result = await res.json();
-      if (result.success) {
-        setDepartments(Array.isArray(result.data) ? result.data : []);
-      } else {
-        toast(result.error || 'Failed to load departments', 'error');
-      }
-    } catch (error) {
-      toast('Failed to load departments', 'error');
-    } finally {
-      setDepartmentsLoading(false);
-    }
-  };
-
-  const fetchSubcategoriesFromAPI = async () => {
-    try {
-      const token = getToken();
-      const res = await fetch('/api/subcategories', { headers: authHeaders(token) });
-      const result = await res.json();
-      if (result.success) {
-        setSubcategories(Array.isArray(result.data) ? result.data : []);
-      }
-    } catch (error) {
-      toast('Failed to load subcategories', 'error');
-    }
-  };
-
-  const fetchHolidaysFromAPI = async () => {
-    try {
-      const token = getToken();
-      const res = await fetch('/api/holidays', { headers: authHeaders(token) });
-      const result = await res.json();
-      if (result.success) {
-        setHolidays(Array.isArray(result.data) ? result.data : []);
-      }
-    } catch (error) {
-      toast('Failed to load holidays', 'error');
-    }
-  };
-
-  const fetchMasterDataByType = async (
-    typeName: string,
-    setter: (data: MasterDataItem[]) => void,
-    label: string
-  ) => {
-    try {
-      const token = getToken();
-      const typesRes = await fetch('/api/mastertypes', {
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
-});
-      const typesResult = await typesRes.json();
-      const masterType = typesResult.data?.find((t: any) =>
-  t.name?.toLowerCase().includes(typeName) || 
-  typeName.includes(t.name?.toLowerCase()) ||
-  t.code?.toLowerCase().includes(typeName) ||
-  typeName.includes(t.code?.toLowerCase())
-);
-
-      if (!masterType) {
-        setter([]);
-        return;
-      }
-
-      const res = await fetch(`/api/masterdata?masterTypeId=${masterType.id}`, {
-        headers: authHeaders(token)
-      });
-      const result = await res.json();
-      if (result.success) {
-        setter(
-          result.data.map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            description: item.description || '',
-            code: item.code,
-            level: item.sortOrder,
-            isActive: item.isActive,
-            masterTypeId: item.masterTypeId,
-            departmentId: item.departmentId
-          }))
-        );
-      }
-    } catch (error) {
-      toast(`Failed to load ${label}`, 'error');
-    }
-  };
-
-  const fetchPrioritiesFromAPI = () =>
-    fetchMasterDataByType('priority', setPriorities, 'priorities');
-
-  const fetchSeveritiesFromAPI = () =>
-    fetchMasterDataByType('severity', setSeverities, 'severities');
-
-  const fetchSourcesFromAPI = () =>
-  fetchMasterDataByType('sources', setSources, 'sources');
-
-  // ─── useEffect ────────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (activeTab === 'category') {
-      fetchCategoriesFromAPI();
-      fetchDepartmentsFromAPI();
-    }
-    if (activeTab === 'department') {
-      fetchDepartmentsFromAPI();
-    }
-    if (activeTab === 'subcategory') {
-      fetchSubcategoriesFromAPI();
-      fetchCategoriesFromAPI();
-      fetchDepartmentsFromAPI();
-    }
-    if (activeTab === 'holiday') {
-      fetchHolidaysFromAPI();
-    }
-    if (activeTab === 'priority') {
-      fetchPrioritiesFromAPI();
-    }
-    if (activeTab === 'severity') {
-      fetchSeveritiesFromAPI();
-    }
-    if (activeTab === 'source') {
-      fetchSourcesFromAPI();
-    }
-    
-    // Check if it's a dynamic master type
-    const isDynamic = !STATIC_TABS.some(t => t.id === activeTab) && activeTab !== null;
-    if (isDynamic) {
-      fetchMasterDataByTypeId(activeTab as string);
-    }
-  }, [activeTab]);
-
   const fetchMasterTypes = async () => {
     try {
-      setIsMasterTypeLoading(true);
+      setIsLoading(true);
       const token = getToken();
       const res = await fetch('/api/mastertypes', { headers: authHeaders(token) });
       const result = await res.json();
@@ -275,90 +125,122 @@ export default function MasterDataPage() {
     } catch (error) {
       toast('Failed to load master types', 'error');
     } finally {
-      setIsMasterTypeLoading(false);
+      setIsLoading(false);
     }
   };
 
   const fetchMasterDataByTypeId = async (typeId: string) => {
     try {
+      setIsLoading(true);
       const token = getToken();
-      const res = await fetch(`/api/masterdata?masterTypeId=${typeId}`, {
+      const activeTabData = allTabs.find(t => t.id === typeId);
+      const code = activeTabData?.code;
+
+      let endpoint = `/api/masterdata?masterTypeId=${typeId}`;
+      if (code === 'DEPARTMENT') endpoint = '/api/departments';
+      else if (code === 'CATEGORY') endpoint = '/api/categories';
+      else if (code === 'SUBCATEGORY') endpoint = '/api/subcategories';
+      else if (code === 'HOLIDAY') endpoint = '/api/holidays';
+
+      const res = await fetch(endpoint, {
         headers: authHeaders(token)
       });
       const result = await res.json();
       if (result.success) {
-        setDynamicItems(
-          result.data.map((item: any) => ({
+        setMasterItems(
+          (result.data || []).map((item: any) => ({
             id: item.id,
             name: item.name,
             description: item.description || '',
             code: item.code,
-            level: item.sortOrder,
+            level: item.sortOrder || item.level || 0,
             isActive: item.isActive,
-            masterTypeId: item.masterTypeId,
-            departmentId: item.departmentId
+            masterTypeId: item.masterTypeId || typeId,
+            departmentId: item.departmentId,
+            categoryId: item.categoryId,
+            date: item.date
           }))
         );
       }
     } catch (error) {
       toast('Failed to load items', 'error');
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const token = getToken();
+      const res = await fetch('/api/departments', { headers: authHeaders(token) });
+      const result = await res.json();
+      if (result.success) setDepartments(result.data || []);
+    } catch (error) {}
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const token = getToken();
+      const res = await fetch('/api/categories', { headers: authHeaders(token) });
+      const result = await res.json();
+      if (result.success) setCategories(result.data || []);
+    } catch (error) {}
   };
 
   useEffect(() => {
     fetchMasterTypes();
+    fetchDepartments();
+    fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (activeTab) {
+      fetchMasterDataByTypeId(activeTab);
+    }
+  }, [activeTab]);
 
   // ─── Tabs ─────────────────────────────────────────────────────────
 
   const allTabs = useMemo(() => {
-    const staticIds = STATIC_TABS.map(t => t.id);
-    const staticLabels = STATIC_TABS.map(t => t.label.toLowerCase());
+    // Start with static tabs
+    const tabsMap = new Map();
     
-    // Deduplicate by ID to prevent "unique key" warning
-    const dynamicMap = new Map();
-    
+    STATIC_TABS.forEach(tab => {
+      // Find matching masterType from backend to get its UUID
+      const mt = masterTypes.find(m => m.code === tab.code);
+      tabsMap.set(tab.code, {
+        ...tab,
+        id: mt ? mt.id : tab.id, // Use backend UUID if available, else static ID
+        isStatic: true
+      });
+    });
+
+    // Add any other dynamic master types from backend
     masterTypes.forEach(mt => {
-      if (mt && mt.id && !staticIds.includes(mt.id) && !staticLabels.includes(mt.name?.toLowerCase())) {
-        dynamicMap.set(mt.id, {
+      if (!tabsMap.has(mt.code)) {
+        const ui = MASTER_TYPE_UI[mt.code] || { icon: Database, description: `Manage ${mt.name} data items` };
+        tabsMap.set(mt.code, {
           id: mt.id,
           label: mt.name,
-          icon: Database,
-          description: `Manage ${mt.name} data items`,
-          isDynamic: true,
-          code: mt.code
+          icon: ui.icon,
+          description: mt.description || ui.description,
+          code: mt.code,
+          isDynamic: true
         });
       }
     });
-      
-    return [...STATIC_TABS, ...Array.from(dynamicMap.values())];
+
+    return Array.from(tabsMap.values());
   }, [masterTypes]);
 
   // ─── Data Helpers ─────────────────────────────────────────────────
 
   const getData = (): MasterDataItem[] => {
-    switch (activeTab) {
-      case 'category': return categories;
-      case 'subcategory': return subcategories;
-      case 'priority': return priorities;
-      case 'severity': return severities;
-      case 'source': return sources;
-      case 'holiday': return holidays;
-      case 'department': return departments;
-      default: return dynamicItems;
-    }
+    return masterItems;
   };
 
   const setData = (data: MasterDataItem[]) => {
-    switch (activeTab) {
-      case 'category': setCategories(data); break;
-      case 'subcategory': setSubcategories(data); break;
-      case 'priority': setPriorities(data); break;
-      case 'severity': setSeverities(data); break;
-      case 'source': setSources(data); break;
-      case 'holiday': setHolidays(data); break;
-      case 'department': setDepartments(data); break;
-    }
+    setMasterItems(data);
   };
 
   const getFilteredData = () => {
@@ -425,19 +307,22 @@ export default function MasterDataPage() {
   // ─── CRUD ─────────────────────────────────────────────────────────
 
   const handleAdd = () => {
+    const activeTabData = allTabs.find(t => t.id === activeTab);
+    const code = activeTabData?.code;
+
     const newItem: MasterDataItem = {
       id: Date.now().toString(),
       name: '',
       description: '',
-      color: activeTab === 'priority' ? '#FF4444' : undefined,
-      level: activeTab === 'priority' || activeTab === 'severity' ? 1 : undefined,
-      date: activeTab === 'holiday' ? new Date().toISOString().split('T')[0] : undefined,
-      categoryId: activeTab === 'subcategory' ? '' : undefined,
-      categoryName: activeTab === 'subcategory' ? '' : undefined,
-      code: activeTab === 'category' || activeTab === 'subcategory' || activeTab === 'priority' || activeTab === 'severity' || activeTab === 'source' ? '' : undefined,
-      departmentId: activeTab === 'subcategory' ? '' : undefined,
+      color: code === 'PRIORITY' ? '#FF4444' : undefined,
+      level: (code === 'PRIORITY' || code === 'SEVERITY') ? 1 : undefined,
+      date: code === 'HOLIDAY' ? new Date().toISOString().split('T')[0] : undefined,
+      categoryId: undefined,
+      categoryName: undefined,
+      code: '',
+      departmentId: undefined,
       isActive: true,
-      masterTypeId: (allTabs.find(t => (t as any).id === activeTab && (t as any).isDynamic) ? activeTab : undefined) as string | undefined
+      masterTypeId: activeTab as string
     };
     setEditingItem(newItem);
     setShowModal(true);
@@ -454,11 +339,6 @@ export default function MasterDataPage() {
       return;
     }
 
-    if (activeTab === 'category' && !editingItem?.departmentId?.trim()) {
-      toast('Department is required for categories', 'error');
-      return;
-    }
-
     try {
       const token = getToken();
       const headers = {
@@ -466,188 +346,60 @@ export default function MasterDataPage() {
         ...authHeaders(token)
       };
 
-      // ── Category ──
-      if (activeTab === 'category') {
-        const isNew = !categories.find(c => c.id === editingItem.id);
-        const res = await fetch(
-          isNew ? '/api/categories' : `/api/categories/${editingItem.id}`,
-          {
-            method: isNew ? 'POST' : 'PUT',
-            headers,
-            body: JSON.stringify({
-              name: editingItem.name,
-              code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
-              departmentId: editingItem.departmentId,
-              isActive: editingItem.isActive
-            })
-          }
-        );
-        if (res.ok) {
-          toast(isNew ? 'Category created successfully' : 'Category updated successfully', 'success');
-          setShowModal(false); setEditingItem(null);
-          await fetchCategoriesFromAPI();
-        } else {
-          const err = await res.json();
-          toast(err.error || 'Failed to save category', 'error');
-        }
+      const activeTabData = allTabs.find(t => t.id === activeTab);
+      const code = activeTabData?.code;
+      const isNew = !masterItems.find(item => item.id === editingItem.id);
 
-      // ── Department ──
-      } else if (activeTab === 'department') {
-        const isNew = !departments.find(d => d.id === editingItem.id);
-        const res = await fetch(
-          isNew ? '/api/departments' : `/api/departments/${editingItem.id}`,
-          { method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify({ name: editingItem.name }) }
-        );
-        const result = await res.json();
-        if (result.success) {
-          toast(isNew ? 'Department created successfully' : 'Department updated successfully', 'success');
-          setShowModal(false); setEditingItem(null);
-          await fetchDepartmentsFromAPI();
-        } else {
-          toast(result.error || 'Failed to save department', 'error');
-        }
+      let res;
+      let body: any = { ...editingItem };
+      
+      // Cleanup body for generic MasterData
+      if (!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT'].includes(code || '')) {
+        body = {
+          masterTypeId: activeTab,
+          departmentId: editingItem.departmentId || (departments.length > 0 ? departments[0].id : undefined),
+          name: editingItem.name,
+          code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
+          sortOrder: editingItem.level || 0,
+          isActive: editingItem.isActive
+        };
+      }
 
-      // ── Subcategory ──
-      } else if (activeTab === 'subcategory') {
-        const isNew = !subcategories.find(s => s.id === editingItem.id);
-        const res = await fetch(
-          isNew ? '/api/subcategories' : `/api/subcategories/${editingItem.id}`,
-          {
-            method: isNew ? 'POST' : 'PUT',
-            headers,
-            body: JSON.stringify({
-              name: editingItem.name,
-              code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
-              categoryId: editingItem.categoryId,
-              departmentId: editingItem.departmentId,
-              isActive: editingItem.isActive
-            })
-          }
-        );
-        const result = await res.json();
-        if (result.success) {
-          toast(isNew ? 'Subcategory created successfully' : 'Subcategory updated successfully', 'success');
-          setShowModal(false); setEditingItem(null);
-          await fetchSubcategoriesFromAPI();
-        } else {
-          toast(result.error || 'Failed to save subcategory', 'error');
-        }
-
-      // ── Holiday ──
-      } else if (activeTab === 'holiday') {
-        const isNew = !holidays.find(h => h.id === editingItem.id);
-        const res = await fetch(
-          isNew ? '/api/holidays' : `/api/holidays/${editingItem.id}`,
-          {
-            method: isNew ? 'POST' : 'PUT',
-            headers,
-            body: JSON.stringify({
-              name: editingItem.name,
-              date: editingItem.date,
-              description: editingItem.description || '',
-              isActive: editingItem.isActive
-            })
-          }
-        );
-        const result = await res.json();
-        if (result.success) {
-          toast(isNew ? 'Holiday created successfully' : 'Holiday updated successfully', 'success');
-          setShowModal(false); setEditingItem(null);
-          await fetchHolidaysFromAPI();
-        } else {
-          toast(result.error || 'Failed to save holiday', 'error');
-        }
-
-      // ── Priority / Severity / Source (MasterData) ──
-      } else if (activeTab === 'priority' || activeTab === 'severity' || activeTab === 'source') {
-  const typesRes = await fetch('/api/mastertypes', { headers });
-  const typesResult = await typesRes.json();
-  
-  const typeNameMap: Record<string, string> = {
-    'priority': 'priority',
-    'severity': 'severity',
-    'source': 'sources'  // backend mein 'sources' hai
-  };
-  const lookupName = typeNameMap[activeTab] || activeTab;
-  
-  const masterType = typesResult.data?.find((t: any) =>
-    t.name?.toLowerCase() === lookupName || t.code?.toLowerCase() === lookupName
-  );
-
-        if (!masterType) {
-          toast(`${activeTab} mastertype not found. Create it in Swagger first.`, 'error');
-          return;
-        }
-
-        const currentList =
-          activeTab === 'priority' ? priorities :
-          activeTab === 'severity' ? severities : sources;
-
-        const isNew = !currentList.find(p => p.id === editingItem.id);
-        const res = await fetch(
-          isNew ? '/api/masterdata' : `/api/masterdata/${editingItem.id}`,
-          {
-            method: isNew ? 'POST' : 'PUT',
-            headers,
-            body: JSON.stringify({
-              masterTypeId: masterType.id,
-              departmentId: editingItem.departmentId || departments[0]?.id,
-              name: editingItem.name,
-              code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
-              sortOrder: editingItem.level || 0,
-              isActive: editingItem.isActive
-            })
-          }
-        );
-        const result = await res.json();
-        if (result.success) {
-          toast(isNew ? `${activeTab} created successfully` : `${activeTab} updated successfully`, 'success');
-          setShowModal(false); setEditingItem(null);
-          if (activeTab === 'priority') await fetchPrioritiesFromAPI();
-          else if (activeTab === 'severity') await fetchSeveritiesFromAPI();
-          else await fetchSourcesFromAPI();
-        } else {
-          toast(result.error || `Failed to save ${activeTab}`, 'error');
-        }
-
-      // ── Dynamic MasterData ──
-      } else if (allTabs.find(t => (t as any).id === activeTab && (t as any).isDynamic)) {
-        const isNew = !dynamicItems.find(item => item.id === editingItem.id);
-        const res = await fetch(
-          isNew ? '/api/masterdata' : `/api/masterdata/${editingItem.id}`,
-          {
-            method: isNew ? 'POST' : 'PUT',
-            headers,
-            body: JSON.stringify({
-              masterTypeId: activeTab,
-              departmentId: editingItem.departmentId || (departments.length > 0 ? departments[0].id : undefined),
-              name: editingItem.name,
-              code: editingItem.code || editingItem.name?.toUpperCase().replace(/\s+/g, '_'),
-              sortOrder: editingItem.level || 0,
-              isActive: editingItem.isActive
-            })
-          }
-        );
-        const result = await res.json();
-        if (result.success) {
-          toast(isNew ? 'Item created successfully' : 'Item updated successfully', 'success');
-          setShowModal(false); setEditingItem(null);
-          await fetchMasterDataByTypeId(activeTab as string);
-        } else {
-          toast(result.error || 'Failed to save item', 'error');
-        }
-
-      // ── Local state fallback ──
+      if (code === 'DEPARTMENT') {
+        res = await fetch(isNew ? '/api/departments' : `/api/departments/${editingItem.id}`, {
+          method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(body)
+        });
+      } else if (code === 'CATEGORY') {
+        res = await fetch(isNew ? '/api/categories' : `/api/categories/${editingItem.id}`, {
+          method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(body)
+        });
+      } else if (code === 'SUBCATEGORY') {
+        res = await fetch(isNew ? '/api/subcategories' : `/api/subcategories/${editingItem.id}`, {
+          method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(body)
+        });
+      } else if (code === 'HOLIDAY') {
+        res = await fetch(isNew ? '/api/holidays' : `/api/holidays/${editingItem.id}`, {
+          method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(body)
+        });
       } else {
-        const data = getData();
-        const isNew = !data.find(item => item.id === editingItem.id);
-        if (isNew) {
-          setData([...data, editingItem]);
-        } else {
-          setData(data.map(item => item.id === editingItem.id ? editingItem : item));
-        }
-        toast('Item saved successfully', 'success');
-        setShowModal(false); setEditingItem(null);
+        // Generic MasterData
+        res = await fetch(isNew ? '/api/masterdata' : `/api/masterdata/${editingItem.id}`, {
+          method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(body)
+        });
+      }
+
+      const result = await res.json();
+      if (result.success || res.ok) {
+        toast(isNew ? 'Item created successfully' : 'Item updated successfully', 'success');
+        setShowModal(false); 
+        setEditingItem(null);
+        await fetchMasterDataByTypeId(activeTab as string);
+        
+        // Refresh specific dependency lists
+        if (code === 'DEPARTMENT') fetchDepartments();
+        if (code === 'CATEGORY') fetchCategories();
+      } else {
+        toast(result.error || 'Failed to save item', 'error');
       }
 
     } catch (error) {
@@ -657,60 +409,34 @@ export default function MasterDataPage() {
   };
 
   const handleDelete = async (id: string) => {
-    const token = getToken();
-    const headers = authHeaders(token);
+    if (!confirm('Are you sure you want to delete this item?')) return;
 
-    if (activeTab === 'department') {
-      const res = await fetch(`/api/departments/${id}`, { method: 'DELETE', headers });
-      const result = await res.json();
-      if (result.success) { toast('Department deleted successfully', 'success'); await fetchDepartmentsFromAPI(); }
-      else { toast(result.error || 'Failed to delete department', 'error'); }
-      return;
-    }
+    try {
+      const token = getToken();
+      const headers = authHeaders(token);
+      const activeTabData = allTabs.find(t => t.id === activeTab);
+      const code = activeTabData?.code;
 
-    if (activeTab === 'category') {
-      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE', headers });
-      const result = await res.json();
-      if (result.success) { toast('Category deleted successfully', 'success'); await fetchCategoriesFromAPI(); }
-      else { toast(result.error || 'Failed to delete category', 'error'); }
-      return;
-    }
+      let endpoint = `/api/masterdata/${id}`;
+      if (code === 'DEPARTMENT') endpoint = `/api/departments/${id}`;
+      else if (code === 'CATEGORY') endpoint = `/api/categories/${id}`;
+      else if (code === 'SUBCATEGORY') endpoint = `/api/subcategories/${id}`;
+      else if (code === 'HOLIDAY') endpoint = `/api/holidays/${id}`;
 
-    if (activeTab === 'subcategory') {
-      const res = await fetch(`/api/subcategories/${id}`, { method: 'DELETE', headers });
+      const res = await fetch(endpoint, { method: 'DELETE', headers });
       const result = await res.json();
-      if (result.success) { toast('Subcategory deleted successfully', 'success'); await fetchSubcategoriesFromAPI(); }
-      else { toast(result.error || 'Failed to delete subcategory', 'error'); }
-      return;
-    }
-
-    if (activeTab === 'holiday') {
-      const res = await fetch(`/api/holidays/${id}`, { method: 'DELETE', headers });
-      const result = await res.json();
-      if (result.success) { toast('Holiday deleted successfully', 'success'); await fetchHolidaysFromAPI(); }
-      else { toast(result.error || 'Failed to delete holiday', 'error'); }
-      return;
-    }
-
-    if (activeTab === 'priority' || activeTab === 'severity' || activeTab === 'source' || allTabs.find(t => (t as any).id === activeTab && (t as any).isDynamic)) {
-      const res = await fetch(`/api/masterdata/${id}`, { method: 'DELETE', headers });
-      const result = await res.json();
-      if (result.success) {
+      
+      if (result.success || res.ok) {
         toast('Item deleted successfully', 'success');
-        if (activeTab === 'priority') await fetchPrioritiesFromAPI();
-        else if (activeTab === 'severity') await fetchSeveritiesFromAPI();
-        else if (activeTab === 'source') await fetchSourcesFromAPI();
-        else await fetchMasterDataByTypeId(activeTab as string);
+        await fetchMasterDataByTypeId(activeTab as string);
+        if (code === 'DEPARTMENT') fetchDepartments();
+        if (code === 'CATEGORY') fetchCategories();
       } else {
         toast(result.error || 'Failed to delete item', 'error');
       }
-      return;
+    } catch (error) {
+      toast('Failed to delete item', 'error');
     }
-
-    // Local state fallback
-    const data = getData();
-    setData(data.filter(item => item.id !== id));
-    toast('Item deleted successfully', 'success');
   };
 
   const handleSaveMasterType = async () => {
@@ -781,15 +507,14 @@ export default function MasterDataPage() {
     setData(data.map(item => item.id === id ? { ...item, isActive: !item.isActive } : item));
   };
 
-  // ─── Render ───────────────────────────────────────────────────────
-
   const renderContent = () => {
     const filteredData = getFilteredData();
     const activeTabData = allTabs.find(tab => (tab as any).id === activeTab);
+    const code = activeTabData?.code;
 
     if (!activeTabData) return <div>Tab not found</div>;
 
-    if (activeTab === 'email' || activeTab === 'sla') {
+    if (code === 'EMAIL_CONFIG' || code === 'SLA_CONFIG') {
       return (
         <div className="space-y-6">
           <Card>
@@ -869,7 +594,7 @@ export default function MasterDataPage() {
                   required
                 />
 
-                {activeTab !== 'department' && (
+                {code !== 'DEPARTMENT' && (
                   <Input
                     label="Code"
                     value={editingItem?.code || ''}
@@ -878,7 +603,7 @@ export default function MasterDataPage() {
                   />
                 )}
 
-                {activeTab === 'category' && (
+                {code === 'CATEGORY' && (
                   <div>
                     <label className="text-sm font-medium mb-2 block">Department *</label>
                     <Select
@@ -893,90 +618,71 @@ export default function MasterDataPage() {
                   </div>
                 )}
 
-                {activeTab === 'subcategory' && (
-                  <div>
-                    <label className="text-sm font-medium leading-none mb-2 block">Category *</label>
-                    <Select
-                      value={editingItem?.categoryId || ''}
-                      onChange={(value) => {
-                        const selectedCategory = categories.find(cat => cat.id === value);
-                        setEditingItem(editingItem ? {
-                          ...editingItem,
-                          categoryId: value,
-                          categoryName: selectedCategory?.name || '',
-                          departmentId: selectedCategory?.departmentId || editingItem.departmentId
-                        } : null);
-                      }}
-                      options={categories.filter(cat => cat.isActive).map(item => ({
-                        value: item.id,
-                        label: item.name
-                      }))}
-                      placeholder="Select category"
-                    />
-                  </div>
+                {code === 'SUBCATEGORY' && (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Category *</label>
+                      <Select
+                        value={editingItem?.categoryId || ''}
+                        onChange={(value) => {
+                          const selectedCategory = categories.find(cat => cat.id === value);
+                          setEditingItem(editingItem ? {
+                            ...editingItem,
+                            categoryId: value,
+                            categoryName: selectedCategory?.name || '',
+                            departmentId: (selectedCategory as any)?.departmentId || editingItem.departmentId
+                          } : null);
+                        }}
+                        options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+                        placeholder="Select category"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Department *</label>
+                      <Select
+                        value={editingItem?.departmentId || ''}
+                        onChange={(value) => setEditingItem(editingItem ? { ...editingItem, departmentId: value } : null)}
+                        options={departments.map(dept => ({ value: dept.id, label: dept.name }))}
+                        placeholder="Select department"
+                      />
+                    </div>
+                  </>
                 )}
 
-                {activeTab === 'subcategory' && (
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Department *</label>
-                    <Select
-                      value={editingItem?.departmentId || ''}
-                      onChange={(value) => setEditingItem(editingItem ? { ...editingItem, departmentId: value } : null)}
-                      options={(Array.isArray(departments) ? departments : []).map(dept => ({
-                        value: dept.id,
-                        label: dept.name
-                      }))}
-                      placeholder="Select department"
+                {code === 'HOLIDAY' && (
+                  <>
+                    <Input
+                      label="Date"
+                      type="date"
+                      value={editingItem?.date || ''}
+                      onChange={(e) => setEditingItem(editingItem ? { ...editingItem, date: e.target.value } : null)}
                     />
-                  </div>
+                    <Input
+                      label="Description"
+                      value={editingItem?.description || ''}
+                      onChange={(e) => setEditingItem(editingItem ? { ...editingItem, description: e.target.value } : null)}
+                      placeholder="Holiday description"
+                    />
+                  </>
                 )}
 
-                {activeTab === 'priority' && (
+                {(code === 'PRIORITY' || code === 'SEVERITY') && (
                   <div className="grid grid-cols-2 gap-4">
                     <Input
-                      label="Color"
-                      type="color"
-                      value={editingItem?.color || '#FF4444'}
-                      onChange={(e) => setEditingItem(editingItem ? { ...editingItem, color: e.target.value } : null)}
-                    />
-                    <Input
-                      label="Level"
+                      label="Level / Sort Order"
                       type="number"
-                      value={editingItem?.level || 1}
+                      value={editingItem?.level || 0}
                       onChange={(e) => setEditingItem(editingItem ? { ...editingItem, level: parseInt(e.target.value) } : null)}
-                      min="1"
-                      max="3"
                     />
+                    {code === 'PRIORITY' && (
+                      <Input
+                        label="Color"
+                        type="color"
+                        value={editingItem?.color || '#FF4444'}
+                        onChange={(e) => setEditingItem(editingItem ? { ...editingItem, color: e.target.value } : null)}
+                      />
+                    )}
                   </div>
-                )}
-
-                {activeTab === 'severity' && (
-                  <Input
-                    label="Level"
-                    type="number"
-                    value={editingItem?.level || 1}
-                    onChange={(e) => setEditingItem(editingItem ? { ...editingItem, level: parseInt(e.target.value) } : null)}
-                    min="1"
-                    max="4"
-                  />
-                )}
-
-                {activeTab === 'holiday' && (
-                  <Input
-                    label="Date"
-                    type="date"
-                    value={editingItem?.date || ''}
-                    onChange={(e) => setEditingItem(editingItem ? { ...editingItem, date: e.target.value } : null)}
-                  />
-                )}
-
-                {activeTab === 'holiday' && (
-                  <Input
-                    label="Description"
-                    value={editingItem?.description || ''}
-                    onChange={(e) => setEditingItem(editingItem ? { ...editingItem, description: e.target.value } : null)}
-                    placeholder="Enter holiday description"
-                  />
                 )}
 
                 <div className="flex gap-2 pt-4">
@@ -1003,10 +709,10 @@ export default function MasterDataPage() {
                 )}
               </Button>
               <div className="flex-1 grid grid-cols-12 gap-4 text-base font-bold text-muted-foreground">
-                <div className={`${activeTab === 'priority' ? 'col-span-6' : (activeTab === 'holiday' || activeTab === 'severity') ? 'col-span-8' : 'col-span-10'}`}>Name</div>
-                {(activeTab === 'priority' || activeTab === 'severity') && <div className="col-span-2">Level</div>}
-                {activeTab === 'priority' && <div className="col-span-2">Color</div>}
-                {activeTab === 'holiday' && <div className="col-span-2">Date</div>}
+                <div className={`${code === 'PRIORITY' ? 'col-span-6' : (code === 'HOLIDAY' || code === 'SEVERITY') ? 'col-span-8' : 'col-span-10'}`}>Name</div>
+                {(code === 'PRIORITY' || code === 'SEVERITY') && <div className="col-span-2">Level</div>}
+                {code === 'PRIORITY' && <div className="col-span-2">Color</div>}
+                {code === 'HOLIDAY' && <div className="col-span-2">Date</div>}
                 <div className="col-span-2">Actions</div>
               </div>
             </div>
@@ -1033,7 +739,7 @@ export default function MasterDataPage() {
                       </Button>
 
                       <div className="flex-1 grid grid-cols-12 gap-4 items-center">
-                        <div className={`${activeTab === 'priority' ? 'col-span-6' : (activeTab === 'holiday' || activeTab === 'severity') ? 'col-span-8' : 'col-span-10'}`}>
+                        <div className={`${code === 'PRIORITY' ? 'col-span-6' : (code === 'HOLIDAY' || code === 'SEVERITY') ? 'col-span-8' : 'col-span-10'}`}>
                           <div className="flex items-center gap-2">
                             {item.color && <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />}
                             <button onClick={() => toggleExpanded(item.id)} className="group/name flex items-center gap-1.5">
@@ -1049,7 +755,7 @@ export default function MasterDataPage() {
                           </div>
                         </div>
 
-                        {(activeTab === 'priority' || activeTab === 'severity') && (
+                        {(code === 'PRIORITY' || code === 'SEVERITY') && (
                           <div className="col-span-2">
                             {item.level ? (
                               <Badge variant="secondary" className="text-sm px-3 py-1">Level {item.level}</Badge>
@@ -1059,7 +765,7 @@ export default function MasterDataPage() {
                           </div>
                         )}
 
-                        {activeTab === 'priority' && (
+                        {code === 'PRIORITY' && (
                           <div className="col-span-2">
                             {item.color ? (
                               <div className="flex items-center gap-2">
@@ -1072,7 +778,7 @@ export default function MasterDataPage() {
                           </div>
                         )}
 
-                        {activeTab === 'holiday' && (
+                        {code === 'HOLIDAY' && (
                           <div className="col-span-2">
                             {item.date ? (
                               <Badge variant="outline" className="text-sm px-3 py-1">{item.date}</Badge>
@@ -1111,7 +817,7 @@ export default function MasterDataPage() {
                               <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">ID</span>
                               <p className="font-mono mt-1 text-base">{item.id}</p>
                             </div>
-                            {activeTab === 'subcategory' && (item.categoryName || item.categoryId) && (
+                            {code === 'SUBCATEGORY' && (item.categoryName || item.categoryId) && (
                               <div>
                                 <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Category</span>
                                 <p className="mt-1 text-base">{item.categoryName || categories.find(c => c.id === item.categoryId)?.name || '-'}</p>
