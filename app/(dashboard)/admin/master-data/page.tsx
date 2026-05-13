@@ -202,22 +202,23 @@ export default function MasterDataPage() {
   // ─── Tabs ─────────────────────────────────────────────────────────
 
   const allTabs = useMemo(() => {
-    // Start with static tabs
     const tabsMap = new Map();
     
     STATIC_TABS.forEach(tab => {
-      // Find matching masterType from backend to get its UUID
-      const mt = masterTypes.find(m => m.code === tab.code);
+      const mt = masterTypes.find(m => 
+        m.code === tab.code || 
+        m.name?.toLowerCase() === tab.label?.toLowerCase()
+      );
       tabsMap.set(tab.code, {
         ...tab,
-        id: mt ? mt.id : tab.id, // Use backend UUID if available, else static ID
+        id: mt ? mt.id : tab.id,
         isStatic: true
       });
     });
-
-    // Add any other dynamic master types from backend
+  
     masterTypes.forEach(mt => {
-      if (!tabsMap.has(mt.code)) {
+      const alreadyMapped = Array.from(tabsMap.values()).some(t => t.id === mt.id);
+      if (!alreadyMapped && !tabsMap.has(mt.code)) {
         const ui = MASTER_TYPE_UI[mt.code] || { icon: Database, description: `Manage ${mt.name} data items` };
         tabsMap.set(mt.code, {
           id: mt.id,
@@ -229,7 +230,7 @@ export default function MasterDataPage() {
         });
       }
     });
-
+  
     return Array.from(tabsMap.values());
   }, [masterTypes]);
 
