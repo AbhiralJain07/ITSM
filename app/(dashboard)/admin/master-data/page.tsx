@@ -37,6 +37,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/context/ToastContext';
+import { MasterDataExpandedDetails } from './master-data-expanded-details';
 
 interface MasterDataItem {
   id: string;
@@ -668,33 +669,18 @@ export default function MasterDataPage() {
                 )}
 
 {!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT', 'PRIORITY', 'SEVERITY', 'SOURCE', 'EMAIL_CONFIG', 'SLA_CONFIG'].includes(code || '') && (
-  <>
-    <div>
-      <label className="text-sm font-medium mb-2 block">Category</label>
-      <Select
-        value={editingItem?.categoryId || ''}
-        onChange={(value) => {
-          const selectedCategory = categories.find(cat => cat.id === value);
-          setEditingItem(editingItem ? {
-            ...editingItem,
-            categoryId: value,
-            categoryName: selectedCategory?.name || '',
-            departmentId: (selectedCategory as any)?.departmentId || ''
-          } : null);
-        }}
-        options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
-        placeholder="Select category"
-      />
-    </div>
-    {editingItem?.departmentId && (
-      <div>
-        <label className="text-sm font-medium mb-2 block">Department</label>
-        <div className="px-3 py-2 rounded-md border border-border bg-muted text-sm">
-          {departments.find(d => d.id === editingItem.departmentId)?.name || '-'}
-        </div>
-      </div>
-    )}
-  </>
+  <div>
+    <label className="text-sm font-medium mb-2 block">Department *</label>
+    <Select
+      value={editingItem?.departmentId || ''}
+      onChange={(value) => setEditingItem(editingItem ? { ...editingItem, departmentId: value } : null)}
+      options={(Array.isArray(departments) ? departments : []).map(dept => ({
+        value: dept.id,
+        label: dept.name
+      }))}
+      placeholder="Select department"
+    />
+  </div>
 )}
 
                 <div className="flex gap-2 pt-4">
@@ -823,62 +809,10 @@ export default function MasterDataPage() {
                         exit={{ height: 0, opacity: 0 }}
                         className="mt-4 ml-8 p-4 bg-muted/20 rounded-lg"
                       >
-                        <div className="flex flex-col gap-5 text-base">
-                          <div className="flex flex-col gap-4">
-                            <div>
-                              <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">ID</span>
-                              <p className="font-mono mt-1 text-base">{item.id}</p>
-                            </div>
-                            {code === 'SUBCATEGORY' && (item.categoryName || item.categoryId) && (
-  <div>
-    <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Category</span>
-    <p className="mt-1 text-base">{item.categoryName || categories.find(c => c.id === item.categoryId)?.name || '-'}</p>
-  </div>
-)}
-{!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT', 'PRIORITY', 'SEVERITY', 'SOURCE', 'EMAIL_CONFIG', 'SLA_CONFIG'].includes(code || '') && item.categoryId && (
-  <div>
-    <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Category</span>
-    <p className="mt-1 text-base">{item.categoryName || categories.find(c => c.id === item.categoryId)?.name || '-'}</p>
-  </div>
-)}
-{!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT', 'PRIORITY', 'SEVERITY', 'SOURCE', 'EMAIL_CONFIG', 'SLA_CONFIG'].includes(code || '') && item.departmentId && (
-  <div>
-    <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Department</span>
-    <p className="mt-1 text-base">{departments.find(d => d.id === item.departmentId)?.name || '-'}</p>
-  </div>
-)}
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-border/50">
-                            {item.level && (
-                              <div>
-                                <span className="font-medium text-muted-foreground text-sm uppercase tracking-wider">Level</span>
-                                <p className="mt-1 text-base">{item.level}</p>
-                              </div>
-                            )}
-                            {item.color && (
-                              <div>
-                                <span className="font-medium text-muted-foreground text-sm uppercase tracking-wider">Color</span>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                                  <span className="text-base">{item.color}</span>
-                                </div>
-                              </div>
-                            )}
-                            {item.date && (
-                              <div>
-                                <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Date</span>
-                                <p className="mt-1 text-base">{item.date}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {item.description && (
-                          <div className="mt-4">
-                            <span className="font-medium">Description:</span>
-                            <p className="mt-1 text-muted-foreground">{item.description}</p>
-                          </div>
-                        )}
+                        <MasterDataExpandedDetails
+                          itemId={item.id}
+                          masterTypeCode={code}
+                        />
                       </motion.div>
                     )}
                   </motion.div>
