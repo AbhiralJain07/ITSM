@@ -28,7 +28,13 @@ import {
   Check,
   Square,
   MoreVertical,
-  ArrowLeft
+  ArrowLeft,
+  Server,
+  Shield,
+  Inbox,
+  Zap,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -38,6 +44,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/context/ToastContext';
 import { MasterDataExpandedDetails } from './master-data-expanded-details';
+import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/client-api';
 
 interface MasterDataItem {
   id: string;
@@ -54,6 +61,66 @@ interface MasterDataItem {
   subCategories?: any[];
   masterTypeId?: string;
 }
+
+// ─── SLA Types ────────────────────────────────────────────────────────────────
+interface SlaItem {
+  id: string;
+  name: string;
+  departmentId?: string | null;
+  responseTimeMinutes: number;
+  resolutionTimeMinutes: number;
+  businessHoursOnly: boolean;
+  isActive: boolean;
+}
+
+const EMPTY_SLA: Omit<SlaItem, 'id'> = {
+  name: '',
+  departmentId: null,
+  responseTimeMinutes: 60,
+  resolutionTimeMinutes: 480,
+  businessHoursOnly: false,
+  isActive: true,
+};
+
+// ─── Email Types ──────────────────────────────────────────────────────────────
+interface EmailItem {
+  id: string;
+  name: string;
+  smtpHost: string;
+  port: number;
+  userName: string;
+  password: string;
+  fromEmail: string;
+  fromName: string;
+  enableSsl: boolean;
+  imapHost: string;
+  imapPort: number;
+  imapEnableSsl: boolean;
+  inboundMailboxFolder: string;
+  enableIncidentIngestion: boolean;
+  isActive: boolean;
+}
+
+const EMPTY_EMAIL: Omit<EmailItem, 'id'> = {
+  name: '',
+  smtpHost: '',
+  port: 587,
+  userName: '',
+  password: '',
+  fromEmail: '',
+  fromName: '',
+  enableSsl: true,
+  imapHost: '',
+  imapPort: 993,
+  imapEnableSsl: true,
+  inboundMailboxFolder: 'INBOX',
+  enableIncidentIngestion: false,
+  isActive: true,
+};
+
+// ─── Validators ───────────────────────────────────────────────────────────────
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidPort = (port: number) => Number.isInteger(port) && port >= 1 && port <= 65535;
 
 // UI Metadata for known master types
 const STATIC_TABS = [
@@ -103,24 +170,224 @@ export default function MasterDataPage() {
   const [showMasterTypeModal, setShowMasterTypeModal] = useState(false);
   const [editingMasterType, setEditingMasterType] = useState<any>(null);
 
-  // ─── Fetch Functions ───────────────────────────────────────────────
+  // ─── SLA State ────────────────────────────────────────────────────
+  const [slaItems, setSlaItems] = useState<SlaItem[]>([]);
+  const [slaLoading, setSlaLoading] = useState(false);
+  const [showSlaModal, setShowSlaModal] = useState(false);
+  const [editingSla, setEditingSla] = useState<SlaItem | null>(null);
+  const [slaForm, setSlaForm] = useState<Omit<SlaItem, 'id'>>(EMPTY_SLA);
+  const [slaSubmitting, setSlaSubmitting] = useState(false);
 
-  const getToken = () =>
-    typeof window !== 'undefined' ? sessionStorage.getItem('accessToken') : null;
+  // ─── Email State ──────────────────────────────────────────────────
+  const [emailItems, setEmailItems] = useState<EmailItem[]>([]);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [editingEmail, setEditingEmail] = useState<EmailItem | null>(null);
+  const [emailForm, setEmailForm] = useState<Omit<EmailItem, 'id'>>(EMPTY_EMAIL);
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const authHeaders = (token: string | null): Record<string, string> => {
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return headers;
+
+  // ─── SLA API Calls ────────────────────────────────────────────────
+
+  const fetchSlas = async () => {
+    setSlaLoading(true);
+    try {
+      const result = await apiGet<SlaItem[]>('/api/sla-configurations?PageSize=50');
+      if (result.success && result.data) {
+        setSlaItems(result.data);
+      } else {
+        toast(result.error || 'Failed to load SLA configurations', 'error');
+      }
+    } catch {
+      toast('Failed to load SLA configurations', 'error');
+    } finally {
+      setSlaLoading(false);
+    }
   };
+
+  const handleSlaSubmit = async () => {
+    // Validate
+    if (!slaForm.name.trim()) return toast('Name required hai', 'error');
+    if (!slaForm.responseTimeMinutes || Number(slaForm.responseTimeMinutes) < 1) 
+      return toast('Response time 1 minute se zyada hona chahiye', 'error');
+    if (!slaForm.resolutionTimeMinutes || Number(slaForm.resolutionTimeMinutes) < 1) 
+      return toast('Resolution time 1 minute se zyada hona chahiye', 'error');
+
+    const payload = {
+  name: slaForm.name.trim(),
+  responseTimeMinutes: Number(slaForm.responseTimeMinutes),
+  resolutionTimeMinutes: Number(slaForm.resolutionTimeMinutes),
+  businessHoursOnly: slaForm.businessHoursOnly,
+  isActive: slaForm.isActive,
+  isGlobal: false
+};
+
+    setSlaSubmitting(true);
+    try {
+      const isNew = !editingSla;
+      const url = isNew ? '/api/sla-configurations' : `/api/sla-configurations/${editingSla!.id}`;
+      const result = isNew ? await apiPost(url, payload) : await apiPut(url, payload);
+      if (result.success) {
+        toast(isNew ? 'SLA created successfully!' : 'SLA updated successfully!', 'success');
+        setShowSlaModal(false);
+        fetchSlas();
+      } else {
+        toast(result.error || 'Failed to save SLA', 'error');
+      }
+    } catch {
+      toast('Failed to save SLA', 'error');
+    } finally {
+      setSlaSubmitting(false);
+    }
+  };
+
+  const handleSlaDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this SLA?')) return;
+    try {
+      const result = await apiDelete(`/api/sla-configurations/${id}`);
+      if (result.success) {
+        toast('SLA deleted successfully!', 'success');
+        fetchSlas();
+      } else {
+        toast(result.error || 'Failed to delete SLA', 'error');
+      }
+    } catch {
+      toast('Failed to delete SLA', 'error');
+    }
+  };
+
+  const openSlaCreate = () => {
+    setEditingSla(null);
+    setSlaForm(EMPTY_SLA);
+    setShowSlaModal(true);
+  };
+
+  const openSlaEdit = (sla: SlaItem) => {
+    setEditingSla(sla);
+    setSlaForm({
+      name: sla.name,
+      departmentId: sla.departmentId,
+      responseTimeMinutes: sla.responseTimeMinutes,
+      resolutionTimeMinutes: sla.resolutionTimeMinutes,
+      businessHoursOnly: sla.businessHoursOnly,
+      isActive: sla.isActive,
+    });
+    setShowSlaModal(true);
+  };
+
+  // ─── Email API Calls ──────────────────────────────────────────────
+
+  const fetchEmails = async () => {
+    setEmailLoading(true);
+    try {
+      const result = await apiGet<EmailItem[]>('/api/email-configurations?PageSize=50');
+      if (result.success && result.data) {
+        setEmailItems(result.data);
+      } else {
+        toast(result.error || 'Failed to load email configurations', 'error');
+      }
+    } catch {
+      toast('Failed to load email configurations', 'error');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleEmailSubmit = async () => {
+    // Validate
+    if (!emailForm.name.trim()) return toast('Name required hai', 'error');
+    if (!emailForm.smtpHost.trim()) return toast('SMTP Host required hai', 'error');
+    if (!isValidPort(Number(emailForm.port))) return toast('SMTP Port 1-65535 ke beech hona chahiye', 'error');
+    if (!isValidEmail(emailForm.fromEmail)) return toast('Valid From Email address daalo', 'error');
+    if (emailForm.imapHost && !isValidPort(Number(emailForm.imapPort))) return toast('IMAP Port 1-65535 ke beech hona chahiye', 'error');
+
+    const payload = {
+      ...emailForm,
+      port: Number(emailForm.port),
+      imapPort: Number(emailForm.imapPort),
+    };
+
+    setEmailSubmitting(true);
+    try {
+      const isNew = !editingEmail;
+      const url = isNew ? '/api/email-configurations' : `/api/email-configurations/${editingEmail!.id}`;
+      const result = isNew ? await apiPost(url, payload) : await apiPut(url, payload);
+      if (result.success) {
+        toast(isNew ? 'Email config created!' : 'Email config updated!', 'success');
+        setShowEmailModal(false);
+        fetchEmails();
+      } else {
+        toast(result.error || 'Failed to save email config', 'error');
+      }
+    } catch {
+      toast('Failed to save email config', 'error');
+    } finally {
+      setEmailSubmitting(false);
+    }
+  };
+
+  const handleEmailDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this email configuration?')) return;
+    try {
+      const result = await apiDelete(`/api/email-configurations/${id}`);
+      if (result.success) {
+        toast('Email config deleted!', 'success');
+        fetchEmails();
+      } else {
+        toast(result.error || 'Failed to delete email config', 'error');
+      }
+    } catch {
+      toast('Failed to delete email config', 'error');
+    }
+  };
+
+  const openEmailCreate = () => {
+    setEditingEmail(null);
+    setEmailForm(EMPTY_EMAIL);
+    setShowPassword(false);
+    setShowEmailModal(true);
+  };
+
+  const openEmailEdit = (email: EmailItem) => {
+    setEditingEmail(email);
+    setEmailForm({
+      name: email.name,
+      smtpHost: email.smtpHost,
+      port: email.port,
+      userName: email.userName,
+      password: email.password,
+      fromEmail: email.fromEmail,
+      fromName: email.fromName,
+      enableSsl: email.enableSsl,
+      imapHost: email.imapHost,
+      imapPort: email.imapPort,
+      imapEnableSsl: email.imapEnableSsl,
+      inboundMailboxFolder: email.inboundMailboxFolder,
+      enableIncidentIngestion: email.enableIncidentIngestion,
+      isActive: email.isActive,
+    });
+    setShowPassword(false);
+    setShowEmailModal(true);
+  };
+
+  // ─── Fetch on tab change ──────────────────────────────────────────
+
+  useEffect(() => {
+    if (!activeTab) return;
+    const activeTabData = allTabs.find(t => t.id === activeTab);
+    const code = activeTabData?.code;
+    if (code === 'SLA_CONFIG') fetchSlas();
+    else if (code === 'EMAIL_CONFIG') fetchEmails();
+  }, [activeTab]);
+
+  // ─── Fetch Functions ───────────────────────────────────────────────────────
 
   const fetchMasterTypes = async () => {
     try {
       setIsLoading(true);
-      const token = getToken();
-      const res = await fetch('/api/mastertypes', { headers: authHeaders(token) });
-      const result = await res.json();
-      if (result.success) {
+      const result = await apiGet<any[]>('/api/mastertypes');
+      if (result.success && result.data) {
         setMasterTypes(result.data || []);
       }
     } catch (error) {
@@ -133,7 +400,6 @@ export default function MasterDataPage() {
   const fetchMasterDataByTypeId = async (typeId: string) => {
     try {
       setIsLoading(true);
-      const token = getToken();
       const activeTabData = allTabs.find(t => t.id === typeId);
       const code = activeTabData?.code;
 
@@ -143,11 +409,8 @@ export default function MasterDataPage() {
       else if (code === 'SUBCATEGORY') endpoint = '/api/subcategories';
       else if (code === 'HOLIDAY') endpoint = '/api/holidays';
 
-      const res = await fetch(endpoint, {
-        headers: authHeaders(token)
-      });
-      const result = await res.json();
-      if (result.success) {
+      const result = await apiGet<any[]>(endpoint);
+      if (result.success && result.data) {
         setMasterItems(
           (result.data || []).map((item: any) => ({
             id: item.id,
@@ -172,19 +435,15 @@ export default function MasterDataPage() {
 
   const fetchDepartments = async () => {
     try {
-      const token = getToken();
-      const res = await fetch('/api/departments', { headers: authHeaders(token) });
-      const result = await res.json();
-      if (result.success) setDepartments(result.data || []);
+      const result = await apiGet<MasterDataItem[]>('/api/departments');
+      if (result.success && result.data) setDepartments(result.data || []);
     } catch (error) {}
   };
 
   const fetchCategories = async () => {
     try {
-      const token = getToken();
-      const res = await fetch('/api/categories', { headers: authHeaders(token) });
-      const result = await res.json();
-      if (result.success) setCategories(result.data || []);
+      const result = await apiGet<MasterDataItem[]>('/api/categories');
+      if (result.success && result.data) setCategories(result.data || []);
     } catch (error) {}
   };
 
@@ -196,7 +455,12 @@ export default function MasterDataPage() {
 
   useEffect(() => {
     if (activeTab) {
-      fetchMasterDataByTypeId(activeTab);
+      const activeTabData = allTabs.find(t => t.id === activeTab);
+      const code = activeTabData?.code;
+      // Only fetch masterdata for non-special tabs
+      if (code !== 'SLA_CONFIG' && code !== 'EMAIL_CONFIG') {
+        fetchMasterDataByTypeId(activeTab);
+      }
     }
   }, [activeTab]);
 
@@ -237,13 +501,8 @@ export default function MasterDataPage() {
 
   // ─── Data Helpers ─────────────────────────────────────────────────
 
-  const getData = (): MasterDataItem[] => {
-    return masterItems;
-  };
-
-  const setData = (data: MasterDataItem[]) => {
-    setMasterItems(data);
-  };
+  const getData = (): MasterDataItem[] => masterItems;
+  const setData = (data: MasterDataItem[]) => setMasterItems(data);
 
   const getFilteredData = () => {
     const data = getData();
@@ -342,20 +601,12 @@ export default function MasterDataPage() {
     }
 
     try {
-      const token = getToken();
-      const headers = {
-        'Content-Type': 'application/json',
-        ...authHeaders(token)
-      };
-
       const activeTabData = allTabs.find(t => t.id === activeTab);
       const code = activeTabData?.code;
       const isNew = !masterItems.find(item => item.id === editingItem.id);
 
-      let res;
       let body: any = { ...editingItem };
       
-      // Cleanup body for generic MasterData
       if (!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT'].includes(code || '')) {
         body = {
           masterTypeId: activeTab,
@@ -367,45 +618,35 @@ export default function MasterDataPage() {
         };
       }
 
+      let result;
       if (code === 'DEPARTMENT') {
-        res = await fetch(isNew ? '/api/departments' : `/api/departments/${editingItem.id}`, {
-          method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(body)
-        });
+        const url = isNew ? '/api/departments' : `/api/departments/${editingItem.id}`;
+        result = isNew ? await apiPost(url, body) : await apiPut(url, body);
       } else if (code === 'CATEGORY') {
-        res = await fetch(isNew ? '/api/categories' : `/api/categories/${editingItem.id}`, {
-          method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(body)
-        });
+        const url = isNew ? '/api/categories' : `/api/categories/${editingItem.id}`;
+        result = isNew ? await apiPost(url, body) : await apiPut(url, body);
       } else if (code === 'SUBCATEGORY') {
-        res = await fetch(isNew ? '/api/subcategories' : `/api/subcategories/${editingItem.id}`, {
-          method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(body)
-        });
+        const url = isNew ? '/api/subcategories' : `/api/subcategories/${editingItem.id}`;
+        result = isNew ? await apiPost(url, body) : await apiPut(url, body);
       } else if (code === 'HOLIDAY') {
-        res = await fetch(isNew ? '/api/holidays' : `/api/holidays/${editingItem.id}`, {
-          method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(body)
-        });
+        const url = isNew ? '/api/holidays' : `/api/holidays/${editingItem.id}`;
+        result = isNew ? await apiPost(url, body) : await apiPut(url, body);
       } else {
-        // Generic MasterData
-        res = await fetch(isNew ? '/api/masterdata' : `/api/masterdata/${editingItem.id}`, {
-          method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(body)
-        });
+        const url = isNew ? '/api/masterdata' : `/api/masterdata/${editingItem.id}`;
+        result = isNew ? await apiPost(url, body) : await apiPut(url, body);
       }
 
-      const result = await res.json();
-      if (result.success || res.ok) {
+      if (result && result.success) {
         toast(isNew ? 'Item created successfully' : 'Item updated successfully', 'success');
         setShowModal(false); 
         setEditingItem(null);
         await fetchMasterDataByTypeId(activeTab as string);
-        
-        // Refresh specific dependency lists
         if (code === 'DEPARTMENT') fetchDepartments();
         if (code === 'CATEGORY') fetchCategories();
       } else {
-        toast(result.error || 'Failed to save item', 'error');
+        toast(result?.error || 'Failed to save item', 'error');
       }
-
     } catch (error) {
-      console.error('Save error:', error);
       toast('Failed to save item', 'error');
     }
   };
@@ -414,8 +655,6 @@ export default function MasterDataPage() {
     if (!confirm('Are you sure you want to delete this item?')) return;
 
     try {
-      const token = getToken();
-      const headers = authHeaders(token);
       const activeTabData = allTabs.find(t => t.id === activeTab);
       const code = activeTabData?.code;
 
@@ -425,10 +664,9 @@ export default function MasterDataPage() {
       else if (code === 'SUBCATEGORY') endpoint = `/api/subcategories/${id}`;
       else if (code === 'HOLIDAY') endpoint = `/api/holidays/${id}`;
 
-      const res = await fetch(endpoint, { method: 'DELETE', headers });
-      const result = await res.json();
+      const result = await apiDelete(endpoint);
       
-      if (result.success || res.ok) {
+      if (result.success) {
         toast('Item deleted successfully', 'success');
         await fetchMasterDataByTypeId(activeTab as string);
         if (code === 'DEPARTMENT') fetchDepartments();
@@ -448,34 +686,22 @@ export default function MasterDataPage() {
     }
 
     try {
-      const token = getToken();
-      const headers = {
-        'Content-Type': 'application/json',
-        ...authHeaders(token)
-      };
-
       const isNew = !masterTypes.find(mt => mt.id === editingMasterType.id);
-      const res = await fetch(
-        isNew ? '/api/mastertypes' : `/api/mastertypes/${editingMasterType.id}`,
-        {
-          method: isNew ? 'POST' : 'PUT',
-          headers,
-          body: JSON.stringify({
-            name: editingMasterType.name,
-            code: editingMasterType.code || editingMasterType.name?.toUpperCase().replace(/\s+/g, '_'),
-            isActive: true
-          })
-        }
-      );
+      const url = isNew ? '/api/mastertypes' : `/api/mastertypes/${editingMasterType.id}`;
+      const body = {
+        name: editingMasterType.name,
+        code: editingMasterType.code || editingMasterType.name?.toUpperCase().replace(/\s+/g, '_'),
+        isActive: true
+      };
+      const result = isNew ? await apiPost(url, body) : await apiPut(url, body);
 
-      if (res.ok) {
+      if (result.success) {
         toast(isNew ? 'Master Type created successfully' : 'Master Type updated successfully', 'success');
         setShowMasterTypeModal(false);
         setEditingMasterType(null);
         await fetchMasterTypes();
       } else {
-        const err = await res.json();
-        toast(err.error || 'Failed to save master type', 'error');
+        toast(result.error || 'Failed to save master type', 'error');
       }
     } catch (error) {
       toast('Failed to save master type', 'error');
@@ -486,18 +712,13 @@ export default function MasterDataPage() {
     if (!confirm('Are you sure you want to delete this Master Type? All associated data will be lost.')) return;
 
     try {
-      const token = getToken();
-      const res = await fetch(`/api/mastertypes/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders(token)
-      });
+      const result = await apiDelete(`/api/mastertypes/${id}`);
 
-      if (res.ok) {
+      if (result.success) {
         toast('Master Type deleted successfully', 'success');
         await fetchMasterTypes();
       } else {
-        const err = await res.json();
-        toast(err.error || 'Failed to delete master type', 'error');
+        toast(result.error || 'Failed to delete master type', 'error');
       }
     } catch (error) {
       toast('Failed to delete master type', 'error');
@@ -509,33 +730,393 @@ export default function MasterDataPage() {
     setData(data.map(item => item.id === id ? { ...item, isActive: !item.isActive } : item));
   };
 
+  // ─── SLA Render ───────────────────────────────────────────────────
+  const renderSlaContent = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <h2 className="text-2xl font-bold">SLA Configurations</h2>
+        <Button onClick={openSlaCreate} className="gap-2">
+          <Plus className="w-4 h-4" /> Add SLA
+        </Button>
+      </div>
+
+      {slaLoading ? (
+        <Card><CardContent className="py-16 text-center text-muted-foreground">Loading...</CardContent></Card>
+      ) : slaItems.length === 0 ? (
+        <Card>
+          <CardContent className="py-16 text-center text-muted-foreground">
+            <Clock className="w-14 h-14 mx-auto mb-4 opacity-40" />
+            <p className="font-medium">No SLA configurations found</p>
+            <p className="text-sm mt-1">Create your first SLA to get started</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/40">
+                    {['Name', 'Response Time', 'Resolution Time', 'Business Hours Only', 'Status', 'Actions'].map(h => (
+                      <th key={h} className="text-left px-5 py-3 font-semibold text-muted-foreground">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {slaItems.map(sla => (
+                    <tr key={sla.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
+                      <td className="px-5 py-3 font-medium">{sla.name}</td>
+                      <td className="px-5 py-3">{sla.responseTimeMinutes} min</td>
+                      <td className="px-5 py-3">{sla.resolutionTimeMinutes} min</td>
+                      <td className="px-5 py-3">
+                        <Badge variant={sla.businessHoursOnly ? 'default' : 'secondary'}>
+                          {sla.businessHoursOnly ? 'Yes' : 'No'}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-3">
+                        <Badge variant={sla.isActive ? 'default' : 'secondary'}>
+                          {sla.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => openSlaEdit(sla)} className="p-1">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleSlaDelete(sla.id)} className="p-1 text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* SLA Modal */}
+      {showSlaModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-card text-card-foreground border border-border rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-border flex justify-between items-center">
+              <h3 className="text-lg font-semibold">{editingSla ? 'Edit SLA' : 'Create SLA'}</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowSlaModal(false)} className="rounded-full w-8 h-8 p-0">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-6 space-y-4">
+              <Input
+                label="Name *"
+                value={slaForm.name}
+                onChange={e => setSlaForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. High Priority SLA"
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Response Time (min) *"
+                  type="number"
+                  min={1}
+                  value={String(slaForm.responseTimeMinutes)}
+                  onChange={e => setSlaForm(f => ({ ...f, responseTimeMinutes: Number(e.target.value) }))}
+                  placeholder="e.g. 60"
+                />
+                <Input
+                  label="Resolution Time (min) *"
+                  type="number"
+                  min={1}
+                  value={String(slaForm.resolutionTimeMinutes)}
+                  onChange={e => setSlaForm(f => ({ ...f, resolutionTimeMinutes: Number(e.target.value) }))}
+                  placeholder="e.g. 480"
+                />
+              </div>
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={slaForm.businessHoursOnly}
+                    onChange={e => setSlaForm(f => ({ ...f, businessHoursOnly: e.target.checked }))}
+                    className="rounded"
+                  />
+                  Business Hours Only
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={slaForm.isActive}
+                    onChange={e => setSlaForm(f => ({ ...f, isActive: e.target.checked }))}
+                    className="rounded"
+                  />
+                  Is Active
+                </label>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button onClick={handleSlaSubmit} disabled={slaSubmitting} className="gap-2">
+                  <Save className="w-4 h-4" />
+                  {slaSubmitting ? 'Saving...' : editingSla ? 'Update' : 'Create'}
+                </Button>
+                <Button variant="outline" onClick={() => setShowSlaModal(false)}>Cancel</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ─── Email Render ─────────────────────────────────────────────────
+  const renderEmailContent = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <h2 className="text-2xl font-bold">Email Configurations</h2>
+        <Button onClick={openEmailCreate} className="gap-2">
+          <Plus className="w-4 h-4" /> Add Email Config
+        </Button>
+      </div>
+
+      {emailLoading ? (
+        <Card><CardContent className="py-16 text-center text-muted-foreground">Loading...</CardContent></Card>
+      ) : emailItems.length === 0 ? (
+        <Card>
+          <CardContent className="py-16 text-center text-muted-foreground">
+            <Mail className="w-14 h-14 mx-auto mb-4 opacity-40" />
+            <p className="font-medium">No email configurations found</p>
+            <p className="text-sm mt-1">Add your first email configuration to enable email integration</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {emailItems.map(email => (
+            <Card key={email.id}>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary mt-0.5">
+                      <Mail className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-base">{email.name}</h3>
+                        <Badge variant={email.isActive ? 'default' : 'secondary'}>
+                          {email.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                        {email.enableIncidentIngestion && (
+                          <Badge variant="outline" className="text-xs">Incident Ingestion</Badge>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-1 text-sm text-muted-foreground">
+                        <span><span className="font-medium text-foreground">SMTP:</span> {email.smtpHost}:{email.port}</span>
+                        <span><span className="font-medium text-foreground">From:</span> {email.fromEmail}</span>
+                        <span><span className="font-medium text-foreground">IMAP:</span> {email.imapHost || '-'}:{email.imapPort}</span>
+                        <span><span className="font-medium text-foreground">Mailbox:</span> {email.inboundMailboxFolder}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="sm" onClick={() => openEmailEdit(email)} className="p-1">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEmailDelete(email.id)} className="p-1 text-destructive hover:text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-card text-card-foreground border border-border rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-border flex justify-between items-center">
+              <h3 className="text-lg font-semibold">{editingEmail ? 'Edit Email Config' : 'Create Email Config'}</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowEmailModal(false)} className="rounded-full w-8 h-8 p-0">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-6 space-y-5">
+
+              {/* Basic */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Basic</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <Input
+                      label="Config Name *"
+                      value={emailForm.name}
+                      onChange={e => setEmailForm(f => ({ ...f, name: e.target.value }))}
+                      placeholder="e.g. Support Mailbox"
+                    />
+                  </div>
+                  <Input
+                    label="From Email *"
+                    type="email"
+                    value={emailForm.fromEmail}
+                    onChange={e => setEmailForm(f => ({ ...f, fromEmail: e.target.value }))}
+                    placeholder="support@company.com"
+                  />
+                  <Input
+                    label="From Name"
+                    value={emailForm.fromName}
+                    onChange={e => setEmailForm(f => ({ ...f, fromName: e.target.value }))}
+                    placeholder="Support Team"
+                  />
+                </div>
+              </div>
+
+              {/* SMTP */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">SMTP (Outgoing)</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="SMTP Host *"
+                    value={emailForm.smtpHost}
+                    onChange={e => setEmailForm(f => ({ ...f, smtpHost: e.target.value }))}
+                    placeholder="smtp.gmail.com"
+                  />
+                  <Input
+                    label="SMTP Port * (1-65535)"
+                    type="number"
+                    min={1}
+                    max={65535}
+                    value={String(emailForm.port)}
+                    onChange={e => setEmailForm(f => ({ ...f, port: Number(e.target.value) }))}
+                    placeholder="587"
+                  />
+                  <Input
+                    label="Username"
+                    value={emailForm.userName}
+                    onChange={e => setEmailForm(f => ({ ...f, userName: e.target.value }))}
+                    placeholder="Email or username"
+                  />
+                  <div className="relative">
+                    <Input
+                      label="Password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={emailForm.password}
+                      onChange={e => setEmailForm(f => ({ ...f, password: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(p => !p)}
+                      className="absolute right-3 top-8 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={emailForm.enableSsl}
+                        onChange={e => setEmailForm(f => ({ ...f, enableSsl: e.target.checked }))}
+                        className="rounded"
+                      />
+                      Enable SSL (SMTP)
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* IMAP */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">IMAP (Incoming)</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="IMAP Host"
+                    value={emailForm.imapHost}
+                    onChange={e => setEmailForm(f => ({ ...f, imapHost: e.target.value }))}
+                    placeholder="imap.gmail.com"
+                  />
+                  <Input
+                    label="IMAP Port (1-65535)"
+                    type="number"
+                    min={1}
+                    max={65535}
+                    value={String(emailForm.imapPort)}
+                    onChange={e => setEmailForm(f => ({ ...f, imapPort: Number(e.target.value) }))}
+                    placeholder="993"
+                  />
+                  <Input
+                    label="Mailbox Folder"
+                    value={emailForm.inboundMailboxFolder}
+                    onChange={e => setEmailForm(f => ({ ...f, inboundMailboxFolder: e.target.value }))}
+                    placeholder="INBOX"
+                  />
+                  <div className="flex flex-col gap-2 justify-end pb-1">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={emailForm.imapEnableSsl}
+                        onChange={e => setEmailForm(f => ({ ...f, imapEnableSsl: e.target.checked }))}
+                        className="rounded"
+                      />
+                      Enable SSL (IMAP)
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Options */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Options</p>
+                <div className="flex items-center gap-6">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={emailForm.enableIncidentIngestion}
+                      onChange={e => setEmailForm(f => ({ ...f, enableIncidentIngestion: e.target.checked }))}
+                      className="rounded"
+                    />
+                    Enable Incident Ingestion
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={emailForm.isActive}
+                      onChange={e => setEmailForm(f => ({ ...f, isActive: e.target.checked }))}
+                      className="rounded"
+                    />
+                    Is Active
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button onClick={handleEmailSubmit} disabled={emailSubmitting} className="gap-2">
+                  <Save className="w-4 h-4" />
+                  {emailSubmitting ? 'Saving...' : editingEmail ? 'Update' : 'Create'}
+                </Button>
+                <Button variant="outline" onClick={() => setShowEmailModal(false)}>Cancel</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ─── Main renderContent ───────────────────────────────────────────
   const renderContent = () => {
-    const filteredData = getFilteredData();
     const activeTabData = allTabs.find(tab => (tab as any).id === activeTab);
     const code = activeTabData?.code;
 
     if (!activeTabData) return <div>Tab not found</div>;
 
-    if (code === 'EMAIL_CONFIG' || code === 'SLA_CONFIG') {
-      return (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <activeTabData.icon className="w-6 h-6" />
-                {activeTabData.label} Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <Settings className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>{activeTabData.label} configuration coming soon...</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
+    // ✅ SLA_CONFIG — real UI
+    if (code === 'SLA_CONFIG') return renderSlaContent();
+
+    // ✅ EMAIL_CONFIG — real UI
+    if (code === 'EMAIL_CONFIG') return renderEmailContent();
+
+    const filteredData = getFilteredData();
 
     return (
       <div className="space-y-6">
@@ -668,20 +1249,20 @@ export default function MasterDataPage() {
                   </>
                 )}
 
-{!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT', 'PRIORITY', 'SEVERITY', 'SOURCE', 'EMAIL_CONFIG', 'SLA_CONFIG'].includes(code || '') && (
-  <div>
-    <label className="text-sm font-medium mb-2 block">Department *</label>
-    <Select
-      value={editingItem?.departmentId || ''}
-      onChange={(value) => setEditingItem(editingItem ? { ...editingItem, departmentId: value } : null)}
-      options={(Array.isArray(departments) ? departments : []).map(dept => ({
-        value: dept.id,
-        label: dept.name
-      }))}
-      placeholder="Select department"
-    />
-  </div>
-)}
+                {!['CATEGORY', 'SUBCATEGORY', 'HOLIDAY', 'DEPARTMENT', 'PRIORITY', 'SEVERITY', 'SOURCE', 'EMAIL_CONFIG', 'SLA_CONFIG'].includes(code || '') && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Department *</label>
+                    <Select
+                      value={editingItem?.departmentId || ''}
+                      onChange={(value) => setEditingItem(editingItem ? { ...editingItem, departmentId: value } : null)}
+                      options={(Array.isArray(departments) ? departments : []).map(dept => ({
+                        value: dept.id,
+                        label: dept.name
+                      }))}
+                      placeholder="Select department"
+                    />
+                  </div>
+                )}
 
                 <div className="flex gap-2 pt-4">
                   <Button onClick={handleSave} className="gap-2">

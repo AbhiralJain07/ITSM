@@ -69,7 +69,7 @@ export default function LoginPage() {
       const loginResponse = await fetch('https://localhost:5001/api/v1/auth/login', {
         method: 'POST',
         headers: {
-          'accept': 'text/plain',
+          // 'accept': 'text/plain',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

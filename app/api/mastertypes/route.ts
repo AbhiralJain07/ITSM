@@ -1,57 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+import { getToken, unwrapApiResponse, successResponse, errorResponse, fetchFromBackend } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('access_token')?.value
-      || request.headers.get('authorization')?.replace('Bearer ', '');
+    const token = getToken(request);
+    if (!token) return NextResponse.json(errorResponse('Unauthorized'), { status: 401 });
 
-    if (!token) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    const result = await fetchFromBackend(
+      'https://localhost:5001/api/v1/mastertypes?PageNumber=1&PageSize=50',
+      token
+    );
 
-    const res = await fetch('https://localhost:5001/api/v1/mastertypes?PageNumber=1&PageSize=50', {
-      headers: { 'accept': 'application/json', 'Authorization': `Bearer ${token}` }
-    });
+    if (!result.ok) {
+      return NextResponse.json(errorResponse(result.errorText || 'Failed to fetch mastertypes'), { status: result.status });
+    }
 
-    const data = await res.json();
-    const items = data?.elements?.items || [];
-    return NextResponse.json({ success: true, data: items });
+    const items = unwrapApiResponse(result.data);
+    return NextResponse.json(successResponse(items));
 
   } catch (error) {
-    return NextResponse.json({ success: false, error: 'Failed to fetch mastertypes' }, { status: 500 });
+    return NextResponse.json(errorResponse('Failed to fetch mastertypes'), { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get('access_token')?.value
-  || request.headers.get('authorization')?.replace('Bearer ', '')
-  || request.headers.get('Authorization')?.replace('Bearer ', '');
-
-    if (!token) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    const token = getToken(request);
+    if (!token) return NextResponse.json(errorResponse('Unauthorized'), { status: 401 });
 
     const body = await request.json();
 
-    const res = await fetch('https://localhost:5001/api/v1/mastertypes', {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        name: body.name,
-        code: body.code,
-        isActive: body.isActive
-      })
-    });
+    const result = await fetchFromBackend(
+      'https://localhost:5001/api/v1/mastertypes',
+      token,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          name: body.name,
+          code: body.code,
+          isActive: body.isActive
+        })
+      }
+    );
 
-    const text = await res.text();
-    let data = { success: true };
-    try { data = text ? JSON.parse(text) : { success: true }; } catch {}
-    return NextResponse.json({ success: true, data });
+    if (!result.ok) {
+      return NextResponse.json(errorResponse(result.errorText || 'Failed to create mastertype'), { status: result.status });
+    }
+
+    return NextResponse.json(successResponse(result.data));
 
   } catch (error) {
-    return NextResponse.json({ success: false, error: 'Failed to create mastertype' }, { status: 500 });
+    return NextResponse.json(errorResponse('Failed to create mastertype'), { status: 500 });
   }
 }
