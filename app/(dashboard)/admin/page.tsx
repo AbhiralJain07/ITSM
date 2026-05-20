@@ -19,7 +19,8 @@ import {
   Save,
   Database,
   Globe,
-  Bell
+  Bell,
+  Ticket
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/context/ToastContext';
@@ -103,7 +104,12 @@ export default function AdminDashboard() {
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter">System Overview</h1>
           <p className="text-muted-foreground font-medium text-lg">Real-time health monitoring and team performance analytics.</p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <motion.div className="flex flex-wrap gap-3">
+          <Link href="/admin/create-ticket">
+            <Button className="h-12 rounded-2xl px-6 gap-2 shadow-2xl shadow-primary/20 font-black text-xs uppercase tracking-widest">
+              <Ticket className="w-4 h-4" /> CREATE TICKET
+            </Button>
+          </Link>
           <Link href="/admin/members">
             <Button variant="outline" className="h-12 rounded-2xl px-6 gap-2 border-2 font-black text-xs uppercase tracking-widest bg-background/50 backdrop-blur-xl">
               <Users className="w-4 h-4" /> MANAGE MEMBERS
@@ -115,7 +121,7 @@ export default function AdminDashboard() {
           <Button onClick={handleReport} className="h-12 rounded-2xl px-6 gap-2 shadow-2xl shadow-primary/20 font-black text-xs uppercase tracking-widest">
             <Download className="w-4 h-4" /> GENERATE REPORT
           </Button>
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* Analytics KPI Grid */}
