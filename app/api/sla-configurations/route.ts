@@ -15,8 +15,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(errorResponse(result.errorText || 'Failed to fetch SLA configurations'), { status: result.status });
     }
 
-    const items = unwrapApiResponse(result.data);
-    return NextResponse.json(successResponse(items));
+    const data = result.data as Record<string, unknown>;
+const elements = data?.elements as Record<string, unknown>;
+const items = Array.isArray(elements?.items) ? elements.items : 
+              Array.isArray(data) ? data : [];
+return NextResponse.json(successResponse(items));
 
   } catch (error) {
     return NextResponse.json(errorResponse('Failed to fetch SLA configurations'), { status: 500 });

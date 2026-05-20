@@ -106,11 +106,11 @@ export async function fetchFromBackend(
     }
 
     return {
-      data,
-      ok: response.ok,
-      status: response.status,
-      errorText: !response.ok ? text : undefined,
-    };
+  data: data ?? { success: true },
+  ok: response.ok,
+  status: response.status,
+  errorText: !response.ok ? text : undefined,
+};
   } catch (error) {
     return {
       data: null,
