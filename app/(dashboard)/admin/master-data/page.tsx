@@ -215,13 +215,14 @@ export default function MasterDataPage() {
       return toast('Resolution time 1 minute se zyada hona chahiye', 'error');
 
     const payload = {
-  name: slaForm.name.trim(),
-  responseTimeMinutes: Number(slaForm.responseTimeMinutes),
-  resolutionTimeMinutes: Number(slaForm.resolutionTimeMinutes),
-  businessHoursOnly: slaForm.businessHoursOnly,
-  isActive: slaForm.isActive,
-  isGlobal: false
-};
+      name: slaForm.name.trim(),
+      departmentId: null,
+      responseTimeMinutes: Number(slaForm.responseTimeMinutes),
+      resolutionTimeMinutes: Number(slaForm.resolutionTimeMinutes),
+      businessHoursOnly: slaForm.businessHoursOnly,
+      isActive: slaForm.isActive,
+      isGlobal: true
+    };
 
     setSlaSubmitting(true);
     try {

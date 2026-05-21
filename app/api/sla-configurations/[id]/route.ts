@@ -18,11 +18,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
         method: 'PUT',
         body: JSON.stringify({
           name: body.name,
-          departmentId: body.departmentId,
+          departmentId: body.departmentId || null,
           responseTimeMinutes: body.responseTimeMinutes,
           resolutionTimeMinutes: body.resolutionTimeMinutes,
           businessHoursOnly: body.businessHoursOnly,
-          isActive: body.isActive
+          isActive: body.isActive,
+          isGlobal: body.isGlobal
         })
       }
     );

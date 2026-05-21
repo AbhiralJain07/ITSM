@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         body: JSON.stringify({
           name: body.name,
+          departmentId: body.departmentId || null,
           responseTimeMinutes: Number(body.responseTimeMinutes),
           resolutionTimeMinutes: Number(body.resolutionTimeMinutes),
           businessHoursOnly: body.businessHoursOnly ?? false,
