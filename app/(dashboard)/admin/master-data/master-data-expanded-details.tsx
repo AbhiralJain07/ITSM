@@ -15,6 +15,7 @@ export const STATIC_MASTER_TYPE_CODES = [
   'SOURCE',
   'EMAIL_CONFIG',
   'SLA_CONFIG',
+  'ROLES',
 ] as const;
 
 export type StaticMasterTypeCode = (typeof STATIC_MASTER_TYPE_CODES)[number];
