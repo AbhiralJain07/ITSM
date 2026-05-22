@@ -133,6 +133,7 @@ const STATIC_TABS = [
   { id: 'department', label: 'Department', icon: Building, description: 'Manage company departments and groups', code: 'DEPARTMENT' },
   { id: 'email', label: 'Email Config', icon: Settings, description: 'Configure IMAP/SMTP settings for email integration', code: 'EMAIL_CONFIG' },
   { id: 'sla', label: 'SLA Config', icon: Clock, description: 'Configure Service Level Agreements and rules', code: 'SLA_CONFIG' },
+  { id: 'roles', label: 'Roles', icon: Shield, description: 'Manage user roles and permissions', code: 'ROLES' },
 ];
 
 const MASTER_TYPE_UI: Record<string, { icon: any, description: string }> = {
@@ -145,6 +146,7 @@ const MASTER_TYPE_UI: Record<string, { icon: any, description: string }> = {
   'DEPARTMENT': { icon: Building, description: 'Manage company departments and groups' },
   'EMAIL_CONFIG': { icon: Settings, description: 'Configure IMAP/SMTP settings for email integration' },
   'SLA_CONFIG': { icon: Clock, description: 'Configure Service Level Agreements and rules' },
+  'ROLES': { icon: Shield, description: 'Manage user roles and permissions' },
 };
 
 export default function MasterDataPage() {
@@ -277,6 +279,63 @@ export default function MasterDataPage() {
     setShowSlaModal(true);
   };
 
+  // ─── Roles State ──────────────────────────────────────────────────
+const [roleItems, setRoleItems] = useState<{id: string, name: string}[]>([]);
+const [roleLoading, setRoleLoading] = useState(false);
+const [showRoleModal, setShowRoleModal] = useState(false);
+const [editingRole, setEditingRole] = useState<{id: string, name: string} | null>(null);
+const [roleName, setRoleName] = useState('');
+const [roleSubmitting, setRoleSubmitting] = useState(false);
+
+const fetchRoles = async () => {
+  setRoleLoading(true);
+  try {
+    const result = await apiGet<{id: string, name: string}[]>('/api/roles');
+    if (result.success && result.data) setRoleItems(result.data);
+    else toast(result.error || 'Failed to load roles', 'error');
+  } catch {
+    toast('Failed to load roles', 'error');
+  } finally {
+    setRoleLoading(false);
+  }
+};
+
+const handleRoleSubmit = async () => {
+  if (!roleName.trim()) return toast('Name required hai', 'error');
+  setRoleSubmitting(true);
+  try {
+    const isNew = !editingRole;
+    const url = isNew ? '/api/roles' : `/api/roles/${editingRole!.id}`;
+    const result = isNew ? await apiPost(url, { name: roleName }) : await apiPut(url, { name: roleName });
+    if (result.success) {
+      toast(isNew ? 'Role created!' : 'Role updated!', 'success');
+      setShowRoleModal(false);
+      fetchRoles();
+    } else {
+      toast(result.error || 'Failed to save role', 'error');
+    }
+  } catch {
+    toast('Failed to save role', 'error');
+  } finally {
+    setRoleSubmitting(false);
+  }
+};
+
+const handleRoleDelete = async (id: string) => {
+  if (!confirm('Are you sure you want to delete this role?')) return;
+  try {
+    const result = await apiDelete(`/api/roles/${id}`);
+    if (result.success) {
+      toast('Role deleted!', 'success');
+      fetchRoles();
+    } else {
+      toast(result.error || 'Failed to delete role', 'error');
+    }
+  } catch {
+    toast('Failed to delete role', 'error');
+  }
+};
+
   // ─── Email API Calls ──────────────────────────────────────────────
 
   const fetchEmails = async () => {
@@ -379,7 +438,8 @@ export default function MasterDataPage() {
     const activeTabData = allTabs.find(t => t.id === activeTab);
     const code = activeTabData?.code;
     if (code === 'SLA_CONFIG') fetchSlas();
-    else if (code === 'EMAIL_CONFIG') fetchEmails();
+else if (code === 'EMAIL_CONFIG') fetchEmails();
+else if (code === 'ROLES') fetchRoles();
   }, [activeTab]);
 
   // ─── Fetch Functions ───────────────────────────────────────────────────────
@@ -730,6 +790,91 @@ export default function MasterDataPage() {
     const data = getData();
     setData(data.map(item => item.id === id ? { ...item, isActive: !item.isActive } : item));
   };
+
+  // roles RENDER
+  const renderRolesContent = () => (
+  <div className="space-y-6">
+    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <h2 className="text-2xl font-bold">Roles</h2>
+      <Button onClick={() => { setEditingRole(null); setRoleName(''); setShowRoleModal(true); }} className="gap-2">
+        <Plus className="w-4 h-4" /> Add Role
+      </Button>
+    </div>
+
+    {roleLoading ? (
+      <Card><CardContent className="py-16 text-center text-muted-foreground">Loading...</CardContent></Card>
+    ) : roleItems.length === 0 ? (
+      <Card>
+        <CardContent className="py-16 text-center text-muted-foreground">
+          <Shield className="w-14 h-14 mx-auto mb-4 opacity-40" />
+          <p className="font-medium">No roles found</p>
+          <p className="text-sm mt-1">Create your first role to get started</p>
+        </CardContent>
+      </Card>
+    ) : (
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/40">
+                  {['Name', 'Actions'].map(h => (
+                    <th key={h} className="text-left px-5 py-3 font-semibold text-muted-foreground">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {roleItems.map(role => (
+                  <tr key={role.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-5 py-3 font-medium">{role.name}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => { setEditingRole(role); setRoleName(role.name); setShowRoleModal(true); }} className="p-1">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleRoleDelete(role.id)} className="p-1 text-destructive hover:text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    )}
+
+    {showRoleModal && (
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-card text-card-foreground border border-border rounded-lg shadow-xl w-full max-w-md">
+          <div className="p-6 border-b border-border flex justify-between items-center">
+            <h3 className="text-lg font-semibold">{editingRole ? 'Edit Role' : 'Create Role'}</h3>
+            <Button variant="ghost" size="sm" onClick={() => setShowRoleModal(false)} className="rounded-full w-8 h-8 p-0">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="p-6 space-y-4">
+            <Input
+              label="Role Name *"
+              value={roleName}
+              onChange={e => setRoleName(e.target.value)}
+              placeholder="e.g. Support Agent"
+            />
+            <div className="flex gap-2 pt-2">
+              <Button onClick={handleRoleSubmit} disabled={roleSubmitting} className="gap-2">
+                <Save className="w-4 h-4" />
+                {roleSubmitting ? 'Saving...' : editingRole ? 'Update' : 'Create'}
+              </Button>
+              <Button variant="outline" onClick={() => setShowRoleModal(false)}>Cancel</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
 
   // ─── SLA Render ───────────────────────────────────────────────────
   const renderSlaContent = () => (
@@ -1111,11 +1256,15 @@ export default function MasterDataPage() {
 
     if (!activeTabData) return <div>Tab not found</div>;
 
+
     // ✅ SLA_CONFIG — real UI
     if (code === 'SLA_CONFIG') return renderSlaContent();
 
     // ✅ EMAIL_CONFIG — real UI
     if (code === 'EMAIL_CONFIG') return renderEmailContent();
+
+    // ✅ ROLES — real UI
+    if (code === 'ROLES') return renderRolesContent();
 
     const filteredData = getFilteredData();
 
