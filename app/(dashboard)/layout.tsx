@@ -70,7 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ...base,
         { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
         { label: 'Create Ticket', icon: Plus, path: '/admin/create-ticket' },
-        // { label: 'Tickets', icon: Ticket, path: '/admin/tickets' },
+        { label: 'Tickets', icon: Ticket, path: '/admin/tickets' },
         { label: 'Master Data', icon: Database, path: '/admin/master-data' },
         { label: 'Manage Users', icon: Users, path: '/admin/members' },
         { label: 'System Settings', icon: Settings, path: '/admin/settings' },
