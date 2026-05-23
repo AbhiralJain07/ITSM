@@ -2,203 +2,172 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Ticket, 
-  Send, 
-  AlertCircle, 
-  CheckCircle,
+import {
+  Ticket,
+  Send,
+  AlertCircle,
   Tag,
-  Subtitles,
-  AlertTriangle,
-  Activity,
-  Mail,
   Building,
-  Clock,
-  Plus,
-  ArrowRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/context/ToastContext';
-import { useAuth } from '@/context/Providers';
+import { apiGet, apiPost } from '@/lib/client-api';
 
-interface MasterDataItem {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface DropdownItem {
   id: string;
   name: string;
-  description: string;
-  color?: string;
-  level?: number;
-  isActive: boolean;
 }
 
-interface TicketFormData {
-  title: string;
-  description: string;
-  category: string;
-  subcategory: string;
-  priority: string;
-  severity: string;
-  source: string;
-  department: string;
-  urgency: string;
-  impact: string;
+interface SubCategory extends DropdownItem {
+  categoryId?: string;
 }
+
+const EMPTY_FORM = {
+  title: '',
+  description: '',
+  departmentId: '',
+  categoryId: '',
+  subCategoryId: '',
+  priorityId: '',
+  sourceId: '',
+  slaId: '',
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const CreateTicketPage = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [masterData, setMasterData] = useState<Record<string, MasterDataItem[]>>({});
-  const [formData, setFormData] = useState<TicketFormData>({
-    title: '',
-    description: '',
-    category: '',
-    subcategory: '',
-    priority: '',
-    severity: '',
-    source: '',
-    department: '',
-    urgency: '',
-    impact: ''
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
-  // Fetch master data on component mount
-  useEffect(() => {
-    const fetchMasterData = async () => {
-      try {
-        const types = ['category', 'subcategory', 'priority', 'severity', 'source', 'department'];
-        const data: Record<string, MasterDataItem[]> = {};
-        
-        for (const type of types) {
-          const response = await fetch(`/api/master-data/${type}`);
-          if (response.ok) {
-            const result = await response.json();
-            data[type] = result.data;
-          }
-        }
-        
-        setMasterData(data);
-      } catch (error) {
-        console.error('Failed to fetch master data:', error);
-        toast('Failed to load form options', 'error');
-      }
-    };
+  // Dropdown data
+  const [departments, setDepartments] = useState<DropdownItem[]>([]);
+  const [categories, setCategories] = useState<DropdownItem[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  const [priorities, setPriorities] = useState<DropdownItem[]>([]);
+  const [sources, setSources] = useState<DropdownItem[]>([]);
+  const [slas, setSlas] = useState<DropdownItem[]>([]);
 
-    fetchMasterData();
-  }, [toast]);
+  // ─── Fetch dropdowns ────────────────────────────────────────────
 
-  const handleInputChange = (field: keyof TicketFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Reset dependent fields when category changes
-    if (field === 'category') {
-      setFormData(prev => ({ ...prev, subcategory: '' }));
+  const fetchMasterDataByType = async (typeName: string): Promise<DropdownItem[]> => {
+    try {
+      const typesResult = await apiGet<any[]>('/api/mastertypes');
+      if (!typesResult.success || !typesResult.data) return [];
+
+      const masterType = typesResult.data.find((t: any) =>
+        t.name?.toLowerCase().includes(typeName) ||
+        typeName.includes(t.name?.toLowerCase()) ||
+        t.code?.toLowerCase().includes(typeName) ||
+        typeName.includes(t.code?.toLowerCase())
+      );
+      if (!masterType) return [];
+
+      const result = await apiGet<any[]>(`/api/masterdata?masterTypeId=${masterType.id}`);
+      if (!result.success || !result.data) return [];
+      return (result.data as any[]).filter((i: any) => i.isActive !== false);
+    } catch {
+      return [];
     }
   };
 
-  const getPriorityColor = (priorityName: string) => {
-    const priority = masterData.priority?.find(p => p.name === priorityName);
-    return priority?.color || '#666';
-  };
+  useEffect(() => {
+    const load = async () => {
+      const [depts, cats, subs, prios, srcs, slaList] = await Promise.all([
+        apiGet<DropdownItem[]>('/api/departments'),
+        apiGet<DropdownItem[]>('/api/categories'),
+        apiGet<SubCategory[]>('/api/subcategories'),
+        fetchMasterDataByType('priority'),
+        fetchMasterDataByType('source'),
+        apiGet<DropdownItem[]>('/api/sla-configurations'),
+      ]);
 
-  const getPriorityLevel = (priorityName: string) => {
-    const priority = masterData.priority?.find(p => p.name === priorityName);
-    return priority?.level || 0;
-  };
+      if (depts.success && depts.data) setDepartments(depts.data);
+      if (cats.success && cats.data) setCategories(cats.data);
+      if (subs.success && subs.data) setSubCategories(subs.data);
+      setPriorities(prios);
+      setSources(srcs);
+      if (slaList.success && slaList.data) setSlas(slaList.data as DropdownItem[]);
+    };
+    load();
+  }, []);
 
-  const getSeverityLevel = (severityName: string) => {
-    const severity = masterData.severity?.find(s => s.name === severityName);
-    return severity?.level || 0;
+  // Filter subcategories based on selected category
+  const filteredSubCategories = formData.categoryId
+    ? subCategories.filter((s: any) =>
+        !s.categoryId || s.categoryId === formData.categoryId
+      )
+    : subCategories;
+
+  // ─── Handlers ───────────────────────────────────────────────────
+
+  const handleChange = (field: keyof typeof EMPTY_FORM, value: string) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'categoryId') updated.subCategoryId = '';
+      return updated;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validation
-    const requiredFields = ['title', 'description', 'category', 'subcategory', 'priority', 'severity', 'source', 'department'];
-    const missingFields = requiredFields.filter(field => !formData[field as keyof TicketFormData]);
-    
-    if (missingFields.length > 0) {
-      toast(`Please fill in all required fields: ${missingFields.join(', ')}`, 'error');
-      return;
-    }
+
+    if (!formData.title.trim()) return toast('Title required hai', 'error');
+    if (!formData.description.trim()) return toast('Description required hai', 'error');
+    if (!formData.departmentId) return toast('Department select karo', 'error');
+    if (!formData.categoryId) return toast('Category select karo', 'error');
 
     setIsSubmitting(true);
-
     try {
-      // Create ticket object with master data details
-      const ticketData = {
-        ...formData,
-        userId: user?.id,
-        userName: user?.name,
-        userEmail: user?.email,
-        priorityColor: getPriorityColor(formData.priority),
-        priorityLevel: getPriorityLevel(formData.priority),
-        severityLevel: getSeverityLevel(formData.severity),
-        createdAt: new Date().toISOString(),
-        status: 'Open'
+      const payload = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        departmentId: formData.departmentId,
+        categoryId: formData.categoryId,
+        subCategoryId: formData.subCategoryId || null,
+        priorityId: formData.priorityId || null,
+        sourceId: formData.sourceId || null,
+        slaId: formData.slaId || null,
+        statusId: null,
+        comments: [],
+        attachments: [],
       };
 
-      console.log('Submitting ticket:', ticketData);
-      
-      // Here you would make API call to create ticket
-      // const response = await fetch('/api/tickets', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(ticketData)
-      // });
+      const result = await apiPost('/api/tickets', payload);
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast('Ticket created successfully! Reference: INC-' + Math.floor(Math.random() * 10000), 'success');
-      
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        category: '',
-        subcategory: '',
-        priority: '',
-        severity: '',
-        source: '',
-        department: '',
-        urgency: '',
-        impact: ''
-      });
-      
-    } catch (error) {
-      console.error('Failed to create ticket:', error);
-      toast('Failed to create ticket. Please try again.', 'error');
+      if (result.success) {
+        toast('Ticket created successfully!', 'success');
+        setFormData(EMPTY_FORM);
+      } else {
+        toast(result.error || 'Failed to create ticket', 'error');
+      }
+    } catch {
+      toast('Failed to create ticket', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // ─── Render ──────────────────────────────────────────────────────
+
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { staggerChildren: 0.1 }
-    }
+    visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.1 } },
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+    visible: { opacity: 1, y: 0 },
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-4"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
         <div className="p-3 bg-primary rounded-2xl shadow-xl shadow-primary/20">
           <Ticket className="w-8 h-8 text-primary-foreground" />
         </div>
@@ -208,11 +177,7 @@ const CreateTicketPage = () => {
         </div>
       </motion.div>
 
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <motion.div variants={containerVariants} initial="hidden" animate="visible">
         <Card className="border-none shadow-2xl bg-card/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
           <CardHeader className="p-8">
             <CardTitle className="text-2xl font-black tracking-tight">Ticket Details</CardTitle>
@@ -220,128 +185,84 @@ const CreateTicketPage = () => {
               Please provide as much detail as possible to help us resolve your issue quickly
             </p>
           </CardHeader>
-          
+
           <CardContent className="p-8 pt-0">
             <form onSubmit={handleSubmit} className="space-y-8">
+
               {/* Basic Information */}
               <motion.div variants={itemVariants} className="space-y-6">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5" />
-                  Basic Information
+                  <AlertCircle className="w-5 h-5" /> Basic Information
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                      Ticket Title *
-                    </label>
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium mb-2 block">Ticket Title *</label>
                     <Input
                       placeholder="Brief description of your issue"
                       value={formData.title}
-                      onChange={(e) => handleInputChange('title', e.target.value)}
-                      required
+                      onChange={e => handleChange('title', e.target.value)}
                     />
                   </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                      How are you reporting this? *
-                    </label>
-                    <Select
-                      value={formData.source}
-                      onChange={(value) => handleInputChange('source', value)}
-                      options={masterData.source?.map(item => ({
-                        value: item.id,
-                        label: item.name
-                      })) || []}
-                      placeholder="Select source"
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                    Detailed Description *
-                  </label>
-                  <textarea
-                    placeholder="Please describe your issue in detail. What happened? When did it start? What have you tried?"
-                    value={formData.description}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('description', e.target.value)}
-                    rows={4}
-                    required
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium mb-2 block">Detailed Description *</label>
+                    <textarea
+                      placeholder="Please describe your issue in detail..."
+                      value={formData.description}
+                      onChange={e => handleChange('description', e.target.value)}
+                      rows={4}
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    />
+                  </div>
                 </div>
               </motion.div>
 
               {/* Classification */}
               <motion.div variants={itemVariants} className="space-y-6">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Tag className="w-5 h-5" />
-                  Issue Classification
+                  <Tag className="w-5 h-5" /> Issue Classification
                 </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                      Category *
-                    </label>
-                    <Select
-                      value={formData.category}
-                      onChange={(value) => handleInputChange('category', value)}
-                      options={masterData.category?.map(item => ({
-                        value: item.id,
-                        label: item.name
-                      })) || []}
-                      placeholder="Select category"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                      Subcategory *
-                    </label>
-                    <Select
-                      value={formData.subcategory}
-                      onChange={(value) => handleInputChange('subcategory', value)}
-                      options={masterData.subcategory?.map(item => ({
-                        value: item.id,
-                        label: item.name
-                      })) || []}
-                      placeholder="Select subcategory"
-                      disabled={!formData.category}
-                    />
-                  </div>
-                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                      Priority *
-                    </label>
+                    <label className="text-sm font-medium mb-2 block">Category *</label>
                     <Select
-                      value={formData.priority}
-                      onChange={(value) => handleInputChange('priority', value)}
-                      options={masterData.priority?.map(item => ({
-                        value: item.id,
-                        label: item.name
-                      })) || []}
+                      value={formData.categoryId}
+                      onChange={val => handleChange('categoryId', val)}
+                      options={categories.map(c => ({ value: c.id, label: c.name }))}
+                      placeholder="Select category"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Subcategory</label>
+                    <Select
+                      value={formData.subCategoryId}
+                      onChange={val => handleChange('subCategoryId', val)}
+                      options={filteredSubCategories.map(s => ({ value: s.id, label: s.name }))}
+                      placeholder="Select subcategory"
+                      disabled={!formData.categoryId}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Priority</label>
+                    <Select
+                      value={formData.priorityId}
+                      onChange={val => handleChange('priorityId', val)}
+                      options={priorities.map(p => ({ value: p.id, label: p.name }))}
                       placeholder="Select priority"
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                      Severity *
-                    </label>
+                    <label className="text-sm font-medium mb-2 block">Source</label>
                     <Select
-                      value={formData.severity}
-                      onChange={(value) => handleInputChange('severity', value)}
-                      options={masterData.severity?.map(item => ({
-                        value: item.id,
-                        label: item.name
-                      })) || []}
-                      placeholder="Select severity"
+                      value={formData.sourceId}
+                      onChange={val => handleChange('sourceId', val)}
+                      options={sources.map(s => ({ value: s.id, label: s.name }))}
+                      placeholder="How are you reporting this?"
                     />
                   </div>
                 </div>
@@ -350,66 +271,38 @@ const CreateTicketPage = () => {
               {/* Additional Information */}
               <motion.div variants={itemVariants} className="space-y-6">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Building className="w-5 h-5" />
-                  Additional Information
+                  <Building className="w-5 h-5" /> Additional Information
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                      Department *
-                    </label>
+                    <label className="text-sm font-medium mb-2 block">Department *</label>
                     <Select
-                      value={formData.department}
-                      onChange={(value) => handleInputChange('department', value)}
-                      options={masterData.department?.map(item => ({
-                        value: item.id,
-                        label: item.name
-                      })) || []}
+                      value={formData.departmentId}
+                      onChange={val => handleChange('departmentId', val)}
+                      options={departments.map(d => ({ value: d.id, label: d.name }))}
                       placeholder="Select department"
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                      Urgency
-                    </label>
-                    <Input
-                      placeholder="How urgent is this issue?"
-                      value={formData.urgency}
-                      onChange={(e) => handleInputChange('urgency', e.target.value)}
+                    <label className="text-sm font-medium mb-2 block">SLA</label>
+                    <Select
+                      value={formData.slaId}
+                      onChange={val => handleChange('slaId', val)}
+                      options={slas.map(s => ({ value: s.id, label: s.name }))}
+                      placeholder="Select SLA (optional)"
                     />
                   </div>
                 </div>
-
-                <div>
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
-                    Business Impact
-                  </label>
-                  <textarea
-                    placeholder="How does this issue affect your work or business operations?"
-                    value={formData.impact}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('impact', e.target.value)}
-                    rows={3}
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
               </motion.div>
 
-              {/* Submit Button */}
+              {/* Submit */}
               <motion.div variants={itemVariants} className="flex justify-end gap-4 pt-6">
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => window.history.back()}
-                >
+                <Button type="button" variant="outline" onClick={() => window.history.back()}>
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="gap-2 min-w-[140px]"
-                >
+                <Button type="submit" disabled={isSubmitting} className="gap-2 min-w-[140px]">
                   {isSubmitting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
