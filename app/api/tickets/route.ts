@@ -31,27 +31,39 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    const DEFAULT_STATUS_ID = 'a0a8fc5f-cce4-4594-b6fd-bd046ee70f66';
+
+const ticketBody: Record<string, unknown> = {
+  departmentId: body.departmentId,
+  categoryId: body.categoryId,
+  title: body.title,
+  description: body.description,
+  // statusId: body.statusId || DEFAULT_STATUS_ID,
+  comments: [],
+  attachments: []
+};
+    
+    if (body.subCategoryId) ticketBody.subCategoryId = body.subCategoryId;
+    if (body.priorityId) ticketBody.priorityId = body.priorityId;
+    if (body.sourceId) ticketBody.sourceId = body.sourceId;
+    if (body.statusId) ticketBody.statusId = body.statusId;
+    if (body.slaId) ticketBody.slaId = body.slaId;
+    
     const result = await fetchFromBackend('https://localhost:5001/api/v1/tickets', token, {
       method: 'POST',
-      body: JSON.stringify({
-        departmentId: body.departmentId,
-        categoryId: body.categoryId,
-        subCategoryId: body.subCategoryId || null,
-        title: body.title,
-        description: body.description,
-        priorityId: body.priorityId || null,
-        sourceId: body.sourceId || null,
-        statusId: body.statusId || null,
-        slaId: body.slaId || null,
-        comments: [],
-        attachments: []
-      })
+      body: JSON.stringify(ticketBody)
     });
 
     if (!result.ok) {
+      console.log('Ticket creation failed:', JSON.stringify(result.data));
       const errorData = result.data as Record<string, unknown>;
-      return NextResponse.json(errorResponse((errorData?.message as string) || 'Failed to create ticket'), { status: result.status });
+      const errMsg = (errorData?.message as string) || 
+                     (errorData?.elements as any)?.items?.[0]?.message ||
+                     result.errorText ||
+                     'Failed to create ticket';
+      return NextResponse.json(errorResponse(errMsg), { status: result.status });
     }
+    
     return NextResponse.json(successResponse(result.data));
   } catch {
     return NextResponse.json(errorResponse('Failed to create ticket'), { status: 500 });

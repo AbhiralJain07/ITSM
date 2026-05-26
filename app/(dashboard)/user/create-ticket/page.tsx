@@ -99,10 +99,10 @@ const CreateTicketPage = () => {
 
   // Filter subcategories based on selected category
   const filteredSubCategories = formData.categoryId
-    ? subCategories.filter((s: any) =>
-        !s.categoryId || s.categoryId === formData.categoryId
-      )
-    : subCategories;
+  ? subCategories.filter((s: any) =>
+      s.categoryId === formData.categoryId
+    )
+  : [];
 
   // ─── Handlers ───────────────────────────────────────────────────
 
@@ -110,6 +110,10 @@ const CreateTicketPage = () => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
       if (field === 'categoryId') updated.subCategoryId = '';
+      if (field === 'departmentId') {
+        updated.categoryId = '';
+        updated.subCategoryId = '';
+      }
       return updated;
     });
   };
@@ -117,10 +121,10 @@ const CreateTicketPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title.trim()) return toast('Title required hai', 'error');
-    if (!formData.description.trim()) return toast('Description required hai', 'error');
-    if (!formData.departmentId) return toast('Department select karo', 'error');
-    if (!formData.categoryId) return toast('Category select karo', 'error');
+    if (!formData.title.trim()) return toast('Title is required', 'error');
+    if (!formData.description.trim()) return toast('Description is required', 'error');
+    if (!formData.departmentId) return toast('select Department  ', 'error');
+    if (!formData.categoryId) return toast('select Category ', 'error');
 
     setIsSubmitting(true);
     try {
@@ -224,48 +228,63 @@ const CreateTicketPage = () => {
                   <Tag className="w-5 h-5" /> Issue Classification
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Category *</label>
-                    <Select
-                      value={formData.categoryId}
-                      onChange={val => handleChange('categoryId', val)}
-                      options={categories.map(c => ({ value: c.id, label: c.name }))}
-                      placeholder="Select category"
-                    />
-                  </div>
+                
 
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Subcategory</label>
-                    <Select
-                      value={formData.subCategoryId}
-                      onChange={val => handleChange('subCategoryId', val)}
-                      options={filteredSubCategories.map(s => ({ value: s.id, label: s.name }))}
-                      placeholder="Select subcategory"
-                      disabled={!formData.categoryId}
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div>
+    <label className="text-sm font-medium mb-2 block">Department *</label>
+    <Select
+      value={formData.departmentId}
+      onChange={val => handleChange('departmentId', val)}
+      options={departments.map(d => ({ value: d.id, label: d.name }))}
+      placeholder="Select department"
+    />
+  </div>
 
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Priority</label>
-                    <Select
-                      value={formData.priorityId}
-                      onChange={val => handleChange('priorityId', val)}
-                      options={priorities.map(p => ({ value: p.id, label: p.name }))}
-                      placeholder="Select priority"
-                    />
-                  </div>
+  <div>
+    <label className="text-sm font-medium mb-2 block">Category *</label>
+    <Select
+      value={formData.categoryId}
+      onChange={val => handleChange('categoryId', val)}
+      options={categories
+        .filter((c: any) => !formData.departmentId || c.departmentId === formData.departmentId)
+        .map(c => ({ value: c.id, label: c.name }))}
+      placeholder="Select category"
+      disabled={!formData.departmentId}
+    />
+  </div>
 
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Source</label>
-                    <Select
-                      value={formData.sourceId}
-                      onChange={val => handleChange('sourceId', val)}
-                      options={sources.map(s => ({ value: s.id, label: s.name }))}
-                      placeholder="How are you reporting this?"
-                    />
-                  </div>
-                </div>
+  <div>
+    <label className="text-sm font-medium mb-2 block">Subcategory</label>
+    <Select
+      value={formData.subCategoryId}
+      onChange={val => handleChange('subCategoryId', val)}
+      options={filteredSubCategories.map(s => ({ value: s.id, label: s.name }))}
+      placeholder="Select subcategory"
+      disabled={!formData.categoryId}
+    />
+  </div>
+
+  <div>
+    <label className="text-sm font-medium mb-2 block">Priority</label>
+    <Select
+      value={formData.priorityId}
+      onChange={val => handleChange('priorityId', val)}
+      options={priorities.map(p => ({ value: p.id, label: p.name }))}
+      placeholder="Select priority"
+    />
+  </div>
+
+  <div>
+    <label className="text-sm font-medium mb-2 block">Source</label>
+    <Select
+      value={formData.sourceId}
+      onChange={val => handleChange('sourceId', val)}
+      options={sources.map(s => ({ value: s.id, label: s.name }))}
+      placeholder="How are you reporting this?"
+    />
+  </div>
+</div>
               </motion.div>
 
               {/* Additional Information */}
@@ -275,15 +294,7 @@ const CreateTicketPage = () => {
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Department *</label>
-                    <Select
-                      value={formData.departmentId}
-                      onChange={val => handleChange('departmentId', val)}
-                      options={departments.map(d => ({ value: d.id, label: d.name }))}
-                      placeholder="Select department"
-                    />
-                  </div>
+                  
 
                   <div>
                     <label className="text-sm font-medium mb-2 block">SLA</label>
