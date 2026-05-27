@@ -36,6 +36,7 @@ const EMPTY_FORM = {
   priorityId: '',
   sourceId: '',
   slaId: '',
+  statusId: '',
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -52,6 +53,7 @@ const CreateTicketPage = () => {
   const [priorities, setPriorities] = useState<DropdownItem[]>([]);
   const [sources, setSources] = useState<DropdownItem[]>([]);
   const [slas, setSlas] = useState<DropdownItem[]>([]);
+  const [statuses, setStatuses] = useState<DropdownItem[]>([]);
 
   // ─── Fetch dropdowns ────────────────────────────────────────────
 
@@ -60,12 +62,14 @@ const CreateTicketPage = () => {
       const typesResult = await apiGet<any[]>('/api/mastertypes');
       if (!typesResult.success || !typesResult.data) return [];
 
-      const masterType = typesResult.data.find((t: any) =>
-        t.name?.toLowerCase().includes(typeName) ||
-        typeName.includes(t.name?.toLowerCase()) ||
-        t.code?.toLowerCase().includes(typeName) ||
-        typeName.includes(t.code?.toLowerCase())
-      );
+      const search = typeName.toLowerCase();
+
+const masterType = typesResult.data.find((t: any) =>
+  t.name?.toLowerCase().includes(search) ||
+  search.includes(t.name?.toLowerCase()) ||
+  t.code?.toLowerCase().includes(search) ||
+  search.includes(t.code?.toLowerCase())
+);
       if (!masterType) return [];
 
       const result = await apiGet<any[]>(`/api/masterdata?masterTypeId=${masterType.id}`);
@@ -78,21 +82,24 @@ const CreateTicketPage = () => {
 
   useEffect(() => {
     const load = async () => {
-      const [depts, cats, subs, prios, srcs, slaList] = await Promise.all([
+      const [depts, cats, subs, prios, srcs, slaList, statusList] = await Promise.all([
         apiGet<DropdownItem[]>('/api/departments'),
         apiGet<DropdownItem[]>('/api/categories'),
         apiGet<SubCategory[]>('/api/subcategories'),
         fetchMasterDataByType('priority'),
         fetchMasterDataByType('source'),
         apiGet<DropdownItem[]>('/api/sla-configurations'),
+        fetchMasterDataByType('TICKET_STATUS_V2'),
       ]);
 
       if (depts.success && depts.data) setDepartments(depts.data);
       if (cats.success && cats.data) setCategories(cats.data);
       if (subs.success && subs.data) setSubCategories(subs.data);
-      setPriorities(prios);
-      setSources(srcs);
       if (slaList.success && slaList.data) setSlas(slaList.data as DropdownItem[]);
+      setPriorities(prios);
+      setStatuses(statusList);
+      setSources(srcs);
+      
     };
     load();
   }, []);
@@ -137,7 +144,7 @@ const CreateTicketPage = () => {
         priorityId: formData.priorityId || null,
         sourceId: formData.sourceId || null,
         slaId: formData.slaId || null,
-        statusId: null,
+        statusId: formData.statusId,
         comments: [],
         attachments: [],
       };
@@ -274,6 +281,16 @@ const CreateTicketPage = () => {
       placeholder="Select priority"
     />
   </div>
+
+  <div>
+  <label className="text-sm font-medium mb-2 block">Status *</label>
+  <Select
+    value={formData.statusId}
+    onChange={val => handleChange('statusId', val)}
+    options={statuses.map(s => ({ value: s.id, label: s.name }))}
+    placeholder="Select status"
+  />
+</div>
 
   <div>
     <label className="text-sm font-medium mb-2 block">Source</label>

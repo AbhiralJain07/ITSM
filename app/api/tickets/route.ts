@@ -31,17 +31,14 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const DEFAULT_STATUS_ID = 'a0a8fc5f-cce4-4594-b6fd-bd046ee70f66';
-
-const ticketBody: Record<string, unknown> = {
-  departmentId: body.departmentId,
-  categoryId: body.categoryId,
-  title: body.title,
-  description: body.description,
-  // statusId: body.statusId || DEFAULT_STATUS_ID,
-  comments: [],
-  attachments: []
-};
+    const ticketBody: Record<string, unknown> = {
+      departmentId: body.departmentId,
+      categoryId: body.categoryId,
+      title: body.title,
+      description: body.description,
+      comments: [],
+      attachments: []
+    };
     
     if (body.subCategoryId) ticketBody.subCategoryId = body.subCategoryId;
     if (body.priorityId) ticketBody.priorityId = body.priorityId;
