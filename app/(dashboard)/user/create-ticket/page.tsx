@@ -128,10 +128,20 @@ const masterType = typesResult.data.find((t: any) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title.trim()) return toast('Title is required', 'error');
-    if (!formData.description.trim()) return toast('Description is required', 'error');
-    if (!formData.departmentId) return toast('select Department  ', 'error');
-    if (!formData.categoryId) return toast('select Category ', 'error');
+if (!formData.title.trim())
+  return toast('Title is required', 'error');
+
+if (!formData.description.trim())
+  return toast('Description is required', 'error');
+
+if (!formData.departmentId)
+  return toast('Select Department', 'error');
+
+if (!formData.priorityId)
+  return toast('Select Priority', 'error');
+
+if (!formData.sourceId)
+  return toast('Select Source', 'error');
 
     setIsSubmitting(true);
     try {
@@ -139,12 +149,12 @@ const masterType = typesResult.data.find((t: any) =>
         title: formData.title.trim(),
         description: formData.description.trim(),
         departmentId: formData.departmentId,
-        categoryId: formData.categoryId,
+        categoryId: formData.categoryId || null,
         subCategoryId: formData.subCategoryId || null,
-        priorityId: formData.priorityId || null,
-        sourceId: formData.sourceId || null,
+        priorityId: formData.priorityId ,
+        sourceId: formData.sourceId ,
         slaId: formData.slaId || null,
-        statusId: formData.statusId,
+        statusId: formData.statusId ,
         comments: [],
         attachments: [],
       };
@@ -249,7 +259,7 @@ const masterType = typesResult.data.find((t: any) =>
   </div>
 
   <div>
-    <label className="text-sm font-medium mb-2 block">Category *</label>
+    <label className="text-sm font-medium mb-2 block">Category</label>
     <Select
       value={formData.categoryId}
       onChange={val => handleChange('categoryId', val)}
@@ -273,7 +283,7 @@ const masterType = typesResult.data.find((t: any) =>
   </div>
 
   <div>
-    <label className="text-sm font-medium mb-2 block">Priority</label>
+    <label className="text-sm font-medium mb-2 block">Priority *</label>
     <Select
       value={formData.priorityId}
       onChange={val => handleChange('priorityId', val)}
@@ -293,7 +303,7 @@ const masterType = typesResult.data.find((t: any) =>
 </div>
 
   <div>
-    <label className="text-sm font-medium mb-2 block">Source</label>
+    <label className="text-sm font-medium mb-2 block">Source *</label>
     <Select
       value={formData.sourceId}
       onChange={val => handleChange('sourceId', val)}
