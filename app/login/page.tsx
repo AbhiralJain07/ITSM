@@ -35,7 +35,7 @@ export default function LoginPage() {
         console.error('Failed to load company options:', error);
         // Use fallback companies if API fails
         const fallbackOptions = [
-          { value: 'wenodo', label: 'wenodo' }
+          { value: 'abhiral', label: 'abhiral' }
         ];
         setCompanyOptions(fallbackOptions);
         toast('Using fallback companies', 'error');

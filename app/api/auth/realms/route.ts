@@ -10,7 +10,7 @@ export async function GET() {
   console.log('Realms API called - returning Wenodo company');
   
   const companies = [
-    { id: 'wenodo', name: 'Wenodo' }
+    { id: 'abhiral2', name: 'abhiral' }
   ];
 
   console.log('Returning companies:', companies);
