@@ -1,16 +1,14 @@
 "use client";
-import { useParams } from 'next/navigation';
-import { TicketDetail } from '@/components/ui/tickets/TicketDetail';
+import { TicketsList } from '@/components/ui/tickets/TicketList';
 
-export default function AdminTicketDetailPage() {
-  const params = useParams();
+export default function AdminTicketsListPage() {
   return (
-    <TicketDetail
-      ticketId={params?.id as string}
-      backPath="/admin/tickets"
-      canAssign={true}
-      canChangeStatus={true}
-      showInternalNotes={true}
+    <TicketsList
+      title="All Tickets"
+      detailPath="/admin/tickets"
+      createPath="/admin/create-ticket"
+      showAssigned={true}
+      badgeLabel="Ticket Management"
     />
   );
 }
