@@ -15,6 +15,16 @@ import {
   UserCheck,
   Activity,
   X,
+  Copy,
+  Check,
+  Calendar,
+  Clock,
+  Mail,
+  Globe,
+  Layers,
+  Edit,
+  ShieldAlert,
+  History as HistoryIcon,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -88,9 +98,18 @@ const getStatusVariant = (code: string) => {
 
 const getPriorityVariant = (code: string) => {
   const c = code?.toLowerCase();
-  if (c?.includes('critical') || c?.includes('high')) return 'destructive';
-  if (c?.includes('medium')) return 'warning';
+  if (c?.includes('critical') || c?.includes('high') || c?.includes('p0')) return 'destructive';
+  if (c?.includes('medium') || c?.includes('p1')) return 'warning';
   return 'secondary';
+};
+
+const getInitials = (name?: string) => {
+  if (!name || name === '—' || name.toLowerCase() === 'unassigned') return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.trim().slice(0, 2).toUpperCase();
 };
 
 export default function TicketDetailPage() {
@@ -134,6 +153,14 @@ export default function TicketDetailPage() {
   const [showEditPanel, setShowEditPanel] = useState(false);
   const [showStatusPanel, setShowStatusPanel] = useState(false);
   const [showAssignPanel, setShowAssignPanel] = useState(false);
+
+  const [copied, setCopied] = useState(false);
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast('Ticket ID copied!', 'success');
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const fetchTicket = async () => {
     setLoading(true);
@@ -356,197 +383,392 @@ export default function TicketDetailPage() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 p-4">
-      <div className="mx-auto w-full max-w-6xl">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 backdrop-blur-md p-4 sm:p-6 md:p-8">
+      <div className="mx-auto w-full max-w-6xl my-4 sm:my-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl"
+          className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl transition-all duration-300"
         >
           <div className="absolute right-4 top-4 z-10">
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full p-2 hover:bg-slate-100">
-              <X className="w-5 h-5" />
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={() => router.back()}
+              className="rounded-full h-9 w-9 border border-slate-200/50 text-slate-500 hover:text-slate-800 transition-all duration-150 shadow-sm"
+            >
+              <X className="w-4 h-4" />
             </Button>
           </div>
 
           <div className="space-y-6 p-6 lg:p-8">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <span className="text-xs uppercase tracking-[0.3em] text-slate-500">Ticket Info</span>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                    {ticket.ticketNumber}
-                  </span>
+            {/* Modal Header */}
+            <div className="flex flex-col gap-5 border-b border-slate-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400">ITSM Service Portal</span>
+                  <span className="h-1 w-1 rounded-full bg-slate-300" />
+                  <span className="text-[10px] font-semibold text-slate-400">Incident Details</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-slate-700 shadow-sm group">
+                    <span>{ticket.ticketNumber}</span>
+                    <button
+                      onClick={() => handleCopy(ticket.ticketNumber)}
+                      className="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors p-0.5"
+                      title="Copy Ticket ID"
+                    >
+                      {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 opacity-60 group-hover:opacity-100" />}
+                    </button>
+                  </div>
                   {ticket.isResolutionBreached && (
-                    <Badge variant="destructive" className="text-xs gap-1">
-                      <AlertTriangle className="w-3 h-3" /> SLA Breached
+                    <Badge variant="destructive" className="text-xs font-semibold gap-1 px-2.5 py-1 shadow-sm">
+                      <ShieldAlert className="w-3.5 h-3.5" /> SLA Breached
                     </Badge>
                   )}
                 </div>
-                <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-900">{ticket.title}</h1>
-                <p className="mt-2 text-sm text-slate-500">Created {formatDate(ticket.createdAt)}</p>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 leading-snug">
+                  {ticket.title}
+                </h1>
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Created {formatDate(ticket.createdAt)}</span>
+                </div>
               </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={fetchTicket} className="gap-2">
-                  <RefreshCw className="w-4 h-4" /> Refresh
+
+              <div className="flex flex-wrap gap-2.5 lg:self-end">
+                <Button variant="outline" onClick={fetchTicket} className="gap-2 h-9 text-xs font-medium border-slate-200 hover:bg-slate-50 transition-all shadow-sm">
+                  <RefreshCw className="w-3.5 h-3.5" /> Refresh
                 </Button>
-                <Button variant="ghost" onClick={() => router.back()} className="gap-2">
-                  <ArrowLeft className="w-4 h-4" /> Close
+                <Button variant="ghost" onClick={() => router.back()} className="gap-2 h-9 text-xs font-medium border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-all">
+                  <ArrowLeft className="w-3.5 h-3.5" /> Close
                 </Button>
               </div>
             </div>
 
+            {/* Layout Grid */}
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-              <Card className="border-none shadow-lg rounded-3xl">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-bold">Ticket Info</CardTitle>
+              
+              {/* Left Column: Metadata Details */}
+              <Card className="border border-slate-100 shadow-lg rounded-2xl bg-white overflow-hidden">
+                <CardHeader className="pb-4 border-b border-slate-50 bg-slate-50/50">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-primary" /> Ticket Metadata
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="grid gap-4 sm:grid-cols-2 text-sm text-slate-700">
-                  {[
-                    { label: 'Status', value: ticket.statusName || '—' },
-                    { label: 'Priority', value: ticket.priorityName || '—' },
-                    { label: 'Category', value: ticket.categoryName || '—' },
-                    { label: 'Subcategory', value: ticket.subCategoryName || '—' },
-                    { label: 'Source', value: ticket.sourceName || '—' },
-                    { label: 'SLA', value: ticket.slaName || '—' },
-                    { label: 'Requester', value: ticket.requesterName || '—' },
-                    { label: 'Assigned To', value: ticket.assignedUserName || 'Unassigned' },
-                    { label: 'Created At', value: formatDate(ticket.createdAt) },
-                    { label: 'Updated At', value: formatDate(ticket.updatedAt) },
-                    { label: 'First Response Due', value: formatDate(ticket.firstResponseDueAt) },
-                    { label: 'Resolution Due', value: formatDate(ticket.resolutionDueAt) },
-                  ].map(row => (
-                    <div key={row.label} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{row.label}</div>
-                      <div className="mt-2 text-sm font-semibold text-slate-900">{row.value}</div>
+                <CardContent className="p-6 space-y-6">
+                  {/* Row 1: Status & Priority Highlight */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/30 p-4 hover:bg-slate-50/70 transition-all shadow-sm flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</div>
+                        <div className="mt-1.5 flex items-center">
+                          <Badge variant={getStatusVariant(ticket.statusCode)} className="font-semibold px-2.5 py-1 text-xs">
+                            {ticket.statusName || '—'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-blue-50 text-blue-500">
+                        <Activity className="w-5 h-5" />
+                      </div>
                     </div>
-                  ))}
+
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/30 p-4 hover:bg-slate-50/70 transition-all shadow-sm flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Priority</div>
+                        <div className="mt-1.5 flex items-center">
+                          <Badge variant={getPriorityVariant(ticket.priorityCode)} className="font-semibold px-2.5 py-1 text-xs">
+                            {ticket.priorityName || '—'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-red-50 text-red-500">
+                        <AlertTriangle className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Categorization */}
+                  <div className="grid gap-4 sm:grid-cols-2 border-t border-slate-100 pt-5">
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Category</div>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 bg-slate-50/40 rounded-xl p-3 border border-slate-50">
+                        <Tag className="w-4 h-4 text-slate-400" />
+                        <span className="truncate">{ticket.categoryName || '—'}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Subcategory</div>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 bg-slate-50/40 rounded-xl p-3 border border-slate-50">
+                        <Tag className="w-4 h-4 text-slate-400 opacity-60" />
+                        <span className="truncate">{ticket.subCategoryName || '—'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 3: Source & SLA */}
+                  <div className="grid gap-4 sm:grid-cols-2 border-t border-slate-100 pt-5">
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Source</div>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 bg-slate-50/40 rounded-xl p-3 border border-slate-50">
+                        {ticket.sourceName?.toLowerCase().includes('email') ? (
+                          <Mail className="w-4 h-4 text-slate-400" />
+                        ) : (
+                          <Globe className="w-4 h-4 text-slate-400" />
+                        )}
+                        <span>{ticket.sourceName || '—'}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">SLA Plan</div>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 bg-slate-50/40 rounded-xl p-3 border border-slate-50">
+                        <Layers className="w-4 h-4 text-slate-400" />
+                        <span className="truncate">{ticket.slaName || '—'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 4: Requester & Assigned To */}
+                  <div className="grid gap-4 sm:grid-cols-2 border-t border-slate-100 pt-5">
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Requester</div>
+                      <div className="flex items-center gap-3 bg-slate-50/40 rounded-xl p-3 border border-slate-50">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 font-mono text-xs font-bold text-blue-700 shadow-sm border border-blue-200/50">
+                          {getInitials(ticket.requesterName)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900 truncate">{ticket.requesterName || '—'}</p>
+                          <p className="text-[10px] text-slate-400">Ticket Creator</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Assigned To</div>
+                      <div className="flex items-center gap-3 bg-slate-50/40 rounded-xl p-3 border border-slate-50">
+                        {ticket.assignedUserName ? (
+                          <>
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-mono text-xs font-bold text-emerald-700 shadow-sm border border-emerald-200/50">
+                              {getInitials(ticket.assignedUserName)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-900 truncate">{ticket.assignedUserName}</p>
+                              <p className="text-[10px] text-slate-400">Assigned Agent</p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-400 border border-slate-200">
+                              ?
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-slate-400 italic">Unassigned</p>
+                              <p className="text-[10px] text-slate-400">No agent assigned</p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 5: SLA Due Dates & Timestamps */}
+                  <div className="grid gap-4 sm:grid-cols-2 border-t border-slate-100 pt-5">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/20 p-3.5 space-y-3.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-primary" /> Key Timestamps
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400">Created At</span>
+                          <span className="font-medium text-slate-700">{formatDate(ticket.createdAt)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400">Updated At</span>
+                          <span className="font-medium text-slate-700">{formatDate(ticket.updatedAt)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/20 p-3.5 space-y-3.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-amber-500" /> SLA Deadlines
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400">First Response Due</span>
+                          <span className={`font-medium ${ticket.isFirstResponseBreached ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>
+                            {formatDate(ticket.firstResponseDueAt)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400">Resolution Due</span>
+                          <span className={`font-medium ${ticket.isResolutionBreached ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>
+                            {formatDate(ticket.resolutionDueAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
+              {/* Right Column: Actions */}
               <div className="space-y-4">
-                <Card className="border-none shadow-lg rounded-3xl">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-bold">Quick Actions</CardTitle>
+                <Card className="border border-slate-100 shadow-lg rounded-2xl bg-white overflow-hidden">
+                  <CardHeader className="pb-4 border-b border-slate-50 bg-slate-50/50">
+                    <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-primary" /> Operations
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="p-4 space-y-3">
                     <Button
-                      variant="ghost"
+                      variant={showEditPanel ? "primary" : "secondary"}
                       onClick={() => setShowEditPanel(prev => !prev)}
-                      className="w-full bg-white text-slate-900 border border-slate-200 shadow-sm hover:bg-primary hover:text-white"
+                      className={`w-full justify-start gap-3 h-10 px-4 font-semibold text-sm rounded-xl transition-all duration-150 ${
+                        showEditPanel ? 'shadow-md' : 'border border-slate-200/50 text-slate-700 hover:text-slate-900'
+                      }`}
                     >
-                      {showEditPanel ? 'Hide Edit Ticket' : 'Edit Ticket'}
+                      <Edit className="w-4 h-4" />
+                      <span>{showEditPanel ? 'Hide Edit Ticket' : 'Edit Ticket'}</span>
                     </Button>
-                    <Button onClick={() => setShowStatusPanel(prev => !prev)} variant="outline" className="w-full">
-                      {showStatusPanel ? 'Hide Change Status' : 'Change Status'}
+
+                    <Button
+                      onClick={() => setShowStatusPanel(prev => !prev)}
+                      variant={showStatusPanel ? "primary" : "secondary"}
+                      className={`w-full justify-start gap-3 h-10 px-4 font-semibold text-sm rounded-xl transition-all duration-150 ${
+                        showStatusPanel ? 'shadow-md' : 'border border-slate-200/50 text-slate-700 hover:text-slate-900'
+                      }`}
+                    >
+                      <Activity className="w-4 h-4" />
+                      <span>{showStatusPanel ? 'Hide Change Status' : 'Change Status'}</span>
                     </Button>
-                    <Button onClick={() => setShowAssignPanel(prev => !prev)} variant="ghost" className="w-full">
-                      {showAssignPanel ? 'Hide Assign Ticket' : 'Assign Ticket'}
+
+                    <Button
+                      onClick={() => setShowAssignPanel(prev => !prev)}
+                      variant={showAssignPanel ? "primary" : "secondary"}
+                      className={`w-full justify-start gap-3 h-10 px-4 font-semibold text-sm rounded-xl transition-all duration-150 ${
+                        showAssignPanel ? 'shadow-md' : 'border border-slate-200/50 text-slate-700 hover:text-slate-900'
+                      }`}
+                    >
+                      <UserCheck className="w-4 h-4" />
+                      <span>{showAssignPanel ? 'Hide Assign Ticket' : 'Assign Ticket'}</span>
                     </Button>
                   </CardContent>
                 </Card>
 
+                {/* Sub Panels */}
                 {showEditPanel && (
-                  <Card className="border-none shadow-lg rounded-3xl">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base font-bold">Edit Ticket</CardTitle>
+                  <Card className="border border-slate-100 shadow-md rounded-2xl bg-white overflow-hidden transition-all">
+                    <CardHeader className="pb-3 bg-slate-50/30 border-b border-slate-100">
+                      <CardTitle className="text-xs font-bold text-slate-800">Edit Details</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Current title</div>
-                        <p className="text-sm text-slate-700">{ticket.title || '—'}</p>
+                    <CardContent className="p-4 space-y-4 text-xs">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Title</label>
+                        <Input placeholder="Enter new title" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="rounded-xl h-9 text-xs" />
                       </div>
-                      <Input placeholder="Enter new title" value={editTitle} onChange={e => setEditTitle(e.target.value)} />
-                      <div>
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Current description</div>
-                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{ticket.description || '—'}</p>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Description</label>
+                        <textarea
+                          placeholder="Enter new description"
+                          value={editDescription}
+                          onChange={e => setEditDescription(e.target.value)}
+                          rows={4}
+                          className="flex min-h-[90px] w-full rounded-xl border border-slate-200 bg-background px-3 py-2 text-xs placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-transparent"
+                        />
                       </div>
-                      <textarea
-                        placeholder="Enter new description"
-                        value={editDescription}
-                        onChange={e => setEditDescription(e.target.value)}
-                        rows={4}
-                        className="flex min-h-[90px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      />
-                      <div>
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Current category</div>
-                        <p className="text-sm text-slate-700">{ticket.categoryName || '—'}</p>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Category</label>
+                          <Select
+                            value={editCategory}
+                            onChange={value => {
+                              setEditCategory(value);
+                              if (value !== editCategory) setEditSubCategory('');
+                            }}
+                            options={categories.map(c => ({ value: c.id, label: c.name }))}
+                            placeholder="Select Category"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Subcategory</label>
+                          <Select
+                            value={editSubCategory}
+                            onChange={setEditSubCategory}
+                            options={filteredEditSubCategories.map((s: any) => ({ value: s.id, label: s.name }))}
+                            placeholder="Select Subcategory"
+                            disabled={!editCategory}
+                          />
+                        </div>
                       </div>
-                      <Select
-                        value={editCategory}
-                        onChange={value => {
-                          setEditCategory(value);
-                          if (value !== editCategory) setEditSubCategory('');
-                        }}
-                        options={categories.map(c => ({ value: c.id, label: c.name }))}
-                        placeholder="Choose a new category"
-                      />
-                      <div>
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Current subcategory</div>
-                        <p className="text-sm text-slate-700">{ticket.subCategoryName || '—'}</p>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Priority</label>
+                          <Select
+                            value={editPriority}
+                            onChange={setEditPriority}
+                            options={priorities.map(p => ({ value: p.id, label: p.name }))}
+                            placeholder="Select Priority"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Source</label>
+                          <Select
+                            value={editSource}
+                            onChange={setEditSource}
+                            options={sources.map(s => ({ value: s.id, label: s.name }))}
+                            placeholder="Select Source"
+                          />
+                        </div>
                       </div>
-                      <Select
-                        value={editSubCategory}
-                        onChange={setEditSubCategory}
-                        options={filteredEditSubCategories.map((s: any) => ({ value: s.id, label: s.name }))}
-                        placeholder="Choose a new subcategory"
-                        disabled={!editCategory}
-                      />
-                      <div>
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Current priority</div>
-                        <p className="text-sm text-slate-700">{ticket.priorityName || '—'}</p>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">SLA Plan</label>
+                        <Select
+                          value={editSla}
+                          onChange={setEditSla}
+                          options={slas.map(s => ({ value: s.id, label: s.name }))}
+                          placeholder="Select SLA Plan"
+                        />
                       </div>
-                      <Select
-                        value={editPriority}
-                        onChange={setEditPriority}
-                        options={priorities.map(p => ({ value: p.id, label: p.name }))}
-                        placeholder="Choose a new priority"
-                      />
-                      <div>
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Current source</div>
-                        <p className="text-sm text-slate-700">{ticket.sourceName || '—'}</p>
-                      </div>
-                      <Select
-                        value={editSource}
-                        onChange={setEditSource}
-                        options={sources.map(s => ({ value: s.id, label: s.name }))}
-                        placeholder="Choose a new source"
-                      />
-                      <div>
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Current SLA</div>
-                        <p className="text-sm text-slate-700">{ticket.slaName || '—'}</p>
-                      </div>
-                      <Select
-                        value={editSla}
-                        onChange={setEditSla}
-                        options={slas.map(s => ({ value: s.id, label: s.name }))}
-                        placeholder="Choose a new SLA"
-                      />
-                      <Button onClick={handleUpdateTicket} disabled={editSubmitting} className="w-full gap-2">
-                        {editSubmitting ? 'Updating...' : 'Update Ticket'}
+
+                      <Button onClick={handleUpdateTicket} disabled={editSubmitting} className="w-full gap-2 rounded-xl h-9 text-xs font-semibold shadow-sm mt-2">
+                        {editSubmitting ? 'Updating...' : 'Save Changes'}
                       </Button>
                     </CardContent>
                   </Card>
                 )}
 
                 {showStatusPanel && (
-                  <Card className="border-none shadow-lg rounded-3xl">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base font-bold">Change Status</CardTitle>
+                  <Card className="border border-slate-100 shadow-md rounded-2xl bg-white overflow-hidden transition-all">
+                    <CardHeader className="pb-3 bg-slate-50/30 border-b border-slate-100">
+                      <CardTitle className="text-xs font-bold text-slate-800">Change Status</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Select
-                        value={selectedStatus}
-                        onChange={setSelectedStatus}
-                        options={statuses.map(s => ({ value: s.id, label: s.name }))}
-                        placeholder="Select status"
-                      />
-                      <Input
-                        placeholder="Reason (optional)"
-                        value={statusReason}
-                        onChange={e => setStatusReason(e.target.value)}
-                      />
-                      <Button onClick={handleStatusChange} disabled={statusSubmitting} className="w-full gap-2">
+                    <CardContent className="p-4 space-y-4 text-xs">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">New Status</label>
+                        <Select
+                          value={selectedStatus}
+                          onChange={setSelectedStatus}
+                          options={statuses.map(s => ({ value: s.id, label: s.name }))}
+                          placeholder="Select Status"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Update Reason</label>
+                        <Input
+                          placeholder="Why is status changing? (optional)"
+                          value={statusReason}
+                          onChange={e => setStatusReason(e.target.value)}
+                          className="rounded-xl h-9 text-xs"
+                        />
+                      </div>
+                      <Button onClick={handleStatusChange} disabled={statusSubmitting} className="w-full gap-2 rounded-xl h-9 text-xs font-semibold shadow-sm mt-2">
                         {statusSubmitting ? 'Updating...' : 'Update Status'}
                       </Button>
                     </CardContent>
@@ -554,24 +776,31 @@ export default function TicketDetailPage() {
                 )}
 
                 {showAssignPanel && (
-                  <Card className="border-none shadow-lg rounded-3xl">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base font-bold">Assign Ticket</CardTitle>
+                  <Card className="border border-slate-100 shadow-md rounded-2xl bg-white overflow-hidden transition-all">
+                    <CardHeader className="pb-3 bg-slate-50/30 border-b border-slate-100">
+                      <CardTitle className="text-xs font-bold text-slate-800">Assign Agent</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Select
-                        value={selectedUser}
-                        onChange={setSelectedUser}
-                        options={[{ value: '', label: 'Unassign' }, ...users.map(u => ({ value: u.id, label: u.name }))]}
-                        placeholder="Select user"
-                      />
-                      <Input
-                        placeholder="Reason (optional)"
-                        value={assignReason}
-                        onChange={e => setAssignReason(e.target.value)}
-                      />
-                      <Button onClick={handleAssign} disabled={assignSubmitting} className="w-full gap-2">
-                        {assignSubmitting ? 'Assigning...' : 'Assign Ticket'}
+                    <CardContent className="p-4 space-y-4 text-xs">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Select Agent</label>
+                        <Select
+                          value={selectedUser}
+                          onChange={setSelectedUser}
+                          options={[{ value: '', label: 'Unassign Ticket' }, ...users.map(u => ({ value: u.id, label: u.name }))]}
+                          placeholder="Select Agent"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Assignment Reason</label>
+                        <Input
+                          placeholder="Reason for reassignment? (optional)"
+                          value={assignReason}
+                          onChange={e => setAssignReason(e.target.value)}
+                          className="rounded-xl h-9 text-xs"
+                        />
+                      </div>
+                      <Button onClick={handleAssign} disabled={assignSubmitting} className="w-full gap-2 rounded-xl h-9 text-xs font-semibold shadow-sm mt-2">
+                        {assignSubmitting ? 'Assigning...' : 'Assign Agent'}
                       </Button>
                     </CardContent>
                   </Card>
@@ -579,88 +808,134 @@ export default function TicketDetailPage() {
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="border-none shadow-lg rounded-3xl">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-bold">Description</CardTitle>
+            {/* Description & Timeline History */}
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              {/* Description */}
+              <Card className="border border-slate-100 shadow-lg rounded-2xl bg-white overflow-hidden">
+                <CardHeader className="pb-4 border-b border-slate-50 bg-slate-50/50">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-primary" /> Description
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{ticket.description || '—'}</p>
+                <CardContent className="p-6">
+                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{ticket.description || 'No description provided.'}</p>
                 </CardContent>
               </Card>
 
-              <Card className="border-none shadow-lg rounded-3xl">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-bold">History</CardTitle>
+              {/* History */}
+              <Card className="border border-slate-100 shadow-lg rounded-2xl bg-white overflow-hidden">
+                <CardHeader className="pb-4 border-b border-slate-50 bg-slate-50/50">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <HistoryIcon className="w-4 h-4 text-primary" /> Timeline History
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="p-6">
                   {timeline.length === 0 ? (
-                    <p className="text-sm text-slate-500">No history available.</p>
+                    <p className="text-xs text-slate-400 italic text-center py-4">No timeline logs available.</p>
                   ) : (
-                    <div className="space-y-3">
-                      {timeline.map((item, index) => (
-                        <div key={item.id || index} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                          <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.18em] text-slate-500">
-                            <span>{item.event || item.action || item.type || 'Update'}</span>
-                            <span>{formatDate(item.timestamp || item.createdAt || item.date)}</span>
+                    <div className="relative pl-6 space-y-5 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
+                      {timeline.map((item, index) => {
+                        const eventType = (item.event || item.action || item.type || 'Update').toLowerCase();
+                        let iconBg = 'bg-slate-100 text-slate-500';
+                        if (eventType.includes('status') || eventType.includes('state')) iconBg = 'bg-blue-50 text-blue-600 border border-blue-200/50';
+                        if (eventType.includes('assign')) iconBg = 'bg-emerald-50 text-emerald-600 border border-emerald-200/50';
+                        if (eventType.includes('create')) iconBg = 'bg-indigo-50 text-indigo-600 border border-indigo-200/50';
+                        if (eventType.includes('comment')) iconBg = 'bg-amber-50 text-amber-600 border border-amber-200/50';
+                        if (eventType.includes('update')) iconBg = 'bg-slate-100 text-slate-700 border border-slate-300/50';
+
+                        return (
+                          <div key={item.id || index} className="relative group">
+                            {/* Dot indicator */}
+                            <div className={`absolute -left-[22px] top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full ring-4 ring-white ${iconBg} text-[9px] font-black`}>
+                              •
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                  {item.event || item.action || item.type || 'Update'}
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  {formatDate(item.timestamp || item.createdAt || item.date)}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                                {item.description || item.details || item.message || JSON.stringify(item)}
+                              </p>
+                            </div>
                           </div>
-                          <div className="mt-2 text-sm text-slate-800">
-                            {item.description || item.details || item.message || JSON.stringify(item)}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="border-none shadow-lg rounded-3xl">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-bold flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" /> Comments
+            {/* Comments Card */}
+            <Card className="border border-slate-100 shadow-lg rounded-2xl bg-white overflow-hidden">
+              <CardHeader className="pb-4 border-b border-slate-50 bg-slate-50/50">
+                <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-primary" /> Comments & Notes
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-6 space-y-6">
                 {(ticket.comments || []).length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-4">No comments yet.</p>
+                  <p className="text-xs text-slate-400 italic text-center py-6 bg-slate-50/20 border border-dashed border-slate-200 rounded-xl">No comments yet.</p>
                 ) : (
-                  ticket.comments.map(comment => (
-                    <div key={comment.id} className={`rounded-3xl border border-slate-200 bg-slate-50 p-4 ${comment.isInternal ? 'ring-1 ring-amber-500/20' : ''}`}>
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="font-semibold text-slate-900">{comment.authorName || 'Unknown'}</p>
-                          <p className="text-xs text-slate-500">{formatDate(comment.createdAt)}</p>
+                  <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
+                    {ticket.comments.map(comment => (
+                      <div
+                        key={comment.id}
+                        className={`relative flex gap-4 p-4 rounded-xl border transition-all ${
+                          comment.isInternal
+                            ? 'bg-amber-500/[0.02] border-amber-200/60 shadow-sm'
+                            : 'bg-slate-50/40 border-slate-100 shadow-sm'
+                        }`}
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 font-mono text-xs font-bold text-slate-700 shadow-sm border border-slate-300/40">
+                          {getInitials(comment.authorName)}
                         </div>
-                        {comment.isInternal && (
-                          <Badge variant="warning" className="text-[10px]">Internal Note</Badge>
-                        )}
+                        <div className="flex-1 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-slate-900">{comment.authorName || 'Unknown'}</span>
+                            <div className="flex items-center gap-2">
+                              {comment.isInternal && (
+                                <Badge variant="warning" className="text-[9px] font-semibold tracking-wider px-1.5 py-0">
+                                  Internal Note
+                                </Badge>
+                              )}
+                              <span className="text-[10px] text-slate-400">{formatDate(comment.createdAt)}</span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{comment.body}</p>
+                        </div>
                       </div>
-                      <p className="mt-3 text-sm text-slate-700 whitespace-pre-wrap">{comment.body}</p>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 )}
 
-                <div className="pt-4 border-t border-slate-200/80 space-y-3">
+                <div className="pt-5 border-t border-slate-100 space-y-3.5">
                   <textarea
-                    placeholder="Write a comment..."
+                    placeholder="Write a public comment or internal note..."
                     value={commentBody}
                     onChange={e => setCommentBody(e.target.value)}
                     rows={3}
-                    className="flex min-h-[90px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex min-h-[90px] w-full rounded-xl border border-slate-200 bg-background px-3 py-2 text-xs placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-transparent transition-all shadow-inner"
                   />
                   <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={isInternal}
                         onChange={e => setIsInternal(e.target.checked)}
-                        className="rounded"
+                        className="rounded border-slate-300 text-primary focus:ring-primary h-3.5 w-3.5"
                       />
-                      Internal Note
+                      <span className="flex items-center gap-1">
+                        Internal Note <span className="text-[10px] text-slate-400 font-normal">(only visible to agents)</span>
+                      </span>
                     </label>
-                    <Button onClick={handleAddComment} disabled={commentSubmitting} className="gap-2">
-                      <Send className="w-4 h-4" />
+                    <Button onClick={handleAddComment} disabled={commentSubmitting} className="gap-2 rounded-xl h-9 text-xs font-semibold shadow-sm px-4">
+                      <Send className="w-3.5 h-3.5" />
                       {commentSubmitting ? 'Sending...' : 'Add Comment'}
                     </Button>
                   </div>
