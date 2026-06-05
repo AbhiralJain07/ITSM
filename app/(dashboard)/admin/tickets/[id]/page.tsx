@@ -245,9 +245,15 @@ export default function TicketDetailPage() {
 
   const fetchTimeline = async () => {
     try {
-      const result = await apiGet<any[]>(`/api/tickets/${ticketId}/timeline`);
+      const result = await apiGet<any>(`/api/tickets/${ticketId}/timeline`);
       if (result.success && result.data) {
-        setTimeline(result.data);
+        const timelineData = result.data;
+        const entries = Array.isArray(timelineData)
+          ? timelineData
+          : timelineData?.elements && Array.isArray(timelineData.elements)
+          ? timelineData.elements
+          : [timelineData];
+        setTimeline(entries);
       }
     } catch {
       // ignore
@@ -835,13 +841,19 @@ export default function TicketDetailPage() {
                   ) : (
                     <div className="relative pl-6 space-y-5 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
                       {timeline.map((item, index) => {
-                        const eventType = (item.event || item.action || item.type || 'Update').toLowerCase();
+                        const eventTypeRaw = item.eventType || item.event || item.action || item.type || 'Update';
+                        const eventType = String(eventTypeRaw).toLowerCase();
                         let iconBg = 'bg-slate-100 text-slate-500';
                         if (eventType.includes('status') || eventType.includes('state')) iconBg = 'bg-blue-50 text-blue-600 border border-blue-200/50';
                         if (eventType.includes('assign')) iconBg = 'bg-emerald-50 text-emerald-600 border border-emerald-200/50';
                         if (eventType.includes('create')) iconBg = 'bg-indigo-50 text-indigo-600 border border-indigo-200/50';
                         if (eventType.includes('comment')) iconBg = 'bg-amber-50 text-amber-600 border border-amber-200/50';
                         if (eventType.includes('update')) iconBg = 'bg-slate-100 text-slate-700 border border-slate-300/50';
+
+                        const title = item.title || String(eventTypeRaw).replace(/_/g, ' ');
+                        const timestamp = formatDate(item.occurredAt || item.timestamp || item.createdAt || item.date);
+                        const description = item.description || item.details || item.message || item.body || 'No description available.';
+                        const actor = item.actorName || item.authorName || item.userName || item.user;
 
                         return (
                           <div key={item.id || index} className="relative group">
@@ -852,14 +864,17 @@ export default function TicketDetailPage() {
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center justify-between gap-3">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                  {item.event || item.action || item.type || 'Update'}
+                                  {title}
                                 </span>
                                 <span className="text-[10px] text-slate-400">
-                                  {formatDate(item.timestamp || item.createdAt || item.date)}
+                                  {timestamp}
                                 </span>
                               </div>
+                              {actor && (
+                                <span className="text-[10px] text-slate-500">By {actor}{item.isInternal ? ' (internal)' : ''}</span>
+                              )}
                               <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                                {item.description || item.details || item.message || JSON.stringify(item)}
+                                {description}
                               </p>
                             </div>
                           </div>
