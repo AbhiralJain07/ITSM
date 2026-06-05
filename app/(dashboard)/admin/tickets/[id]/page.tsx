@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { TicketsList } from '@/components/ui/tickets/TicketList';
 import {
   ArrowLeft,
   RefreshCw,
@@ -369,45 +370,55 @@ export default function TicketDetailPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!ticket) {
-    return (
-      <div className="text-center py-20 text-muted-foreground">
-        <p className="text-lg font-bold">Ticket not found</p>
-        <Button onClick={() => router.back()} className="mt-4 gap-2" variant="outline">
-          <ArrowLeft className="w-4 h-4" /> Go Back
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 backdrop-blur-md p-4 sm:p-6 md:p-8">
-      <div className="mx-auto w-full max-w-6xl my-4 sm:my-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl transition-all duration-300"
-        >
-          <div className="absolute right-4 top-4 z-10">
-            <Button
-              variant="secondary"
-              size="icon"
-              onClick={() => router.back()}
-              className="rounded-full h-9 w-9 border border-slate-200/50 text-slate-500 hover:text-slate-800 transition-all duration-150 shadow-sm"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+    <div className="relative min-h-screen flex w-full">
+      {/* Background Tickets List */}
+      <div className="flex-1 min-w-0">
+        <TicketsList
+          title="All Tickets"
+          detailPath="/admin/tickets"
+          createPath="/admin/create-ticket"
+          showAssigned={true}
+          badgeLabel="Ticket Management"
+        />
+      </div>
 
-          <div className="space-y-6 p-6 lg:p-8">
+      {/* Slide-over Drawer (fixed, right side) */}
+      <motion.div
+        initial={{ x: '100%', opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="fixed top-4 right-4 bottom-4 w-[calc(100%-2rem)] xl:w-[660px] 2xl:w-[700px] bg-white rounded-3xl border border-slate-200/80 shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-40 flex flex-col overflow-hidden"
+      >
+        <div className="absolute right-4 top-4 z-10">
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={() => router.back()}
+            className="rounded-full h-9 w-9 border border-slate-200/50 text-slate-500 hover:text-slate-800 transition-all duration-150 shadow-sm"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 pb-12 md:pb-16 space-y-6">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-full py-20">
+              <RefreshCw className="w-8 h-8 animate-spin text-primary mb-4" />
+              <p className="text-sm text-muted-foreground font-medium">Loading ticket details...</p>
+            </div>
+          ) : !ticket ? (
+            <div className="flex flex-col items-center justify-center h-full py-20 text-center">
+              <AlertTriangle className="w-12 h-12 text-amber-500 mb-4" />
+              <p className="text-lg font-bold text-slate-900">Ticket not found</p>
+              <p className="text-sm text-slate-500 mt-1">This ticket does not exist or was deleted.</p>
+              <Button onClick={() => router.back()} className="mt-6 gap-2" variant="outline">
+                <ArrowLeft className="w-4 h-4" /> Go Back
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
             {/* Modal Header */}
             <div className="flex flex-col gap-5 border-b border-slate-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-2.5">
@@ -453,7 +464,6 @@ export default function TicketDetailPage() {
             </div>
 
             {/* Layout Grid */}
-            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               
               {/* Left Column: Metadata Details */}
               <Card className="border border-slate-100 shadow-lg rounded-2xl bg-white overflow-hidden">
@@ -812,10 +822,8 @@ export default function TicketDetailPage() {
                   </Card>
                 )}
               </div>
-            </div>
 
             {/* Description & Timeline History */}
-            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               {/* Description */}
               <Card className="border border-slate-100 shadow-lg rounded-2xl bg-white overflow-hidden">
                 <CardHeader className="pb-4 border-b border-slate-50 bg-slate-50/50">
@@ -884,7 +892,6 @@ export default function TicketDetailPage() {
                   )}
                 </CardContent>
               </Card>
-            </div>
 
             {/* Comments Card */}
             <Card className="border border-slate-100 shadow-lg rounded-2xl bg-white overflow-hidden">
@@ -958,8 +965,9 @@ export default function TicketDetailPage() {
               </CardContent>
             </Card>
           </div>
-        </motion.div>
-      </div>
+        )}
+        </div>
+      </motion.div>
     </div>
   );
 }
