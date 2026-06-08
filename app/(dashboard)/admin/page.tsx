@@ -179,7 +179,7 @@ export default function AdminDashboardPage() {
 
   // Generate audit activity log based on actual ticket conditions
   const activityLog = React.useMemo(() => {
-    const logs = [];
+    const logs: { id: string | number; type: string; message: string; time: string }[] = [];
     
     // Add SLA breach logs if any exist
     const breachedList = tickets.filter(t => t.isResolutionBreached);
