@@ -535,16 +535,12 @@ export default function UsersPage() {
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                       <Layout className="w-3 h-3" /> Department
                     </label>
-                    <select
+                    <Select
+                      options={[{ value: '', label: 'None' }, ...departments.map(d => ({ value: d.id, label: d.name }))]}
                       value={form.departmentIds[0] || ''}
-                      onChange={e => setForm(f => ({ ...f, departmentIds: e.target.value ? [e.target.value] : [] }))}
-                      className="w-full h-12 rounded-2xl bg-secondary/30 border-none px-4 font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="">None</option>
-                      {departments.map(d => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </select>
+                      onChange={val => setForm(f => ({ ...f, departmentIds: val ? [val] : [] }))}
+                      placeholder="Select department"
+                    />
                   </div>
 
                   {/* Roles */}
@@ -552,25 +548,36 @@ export default function UsersPage() {
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                       <Briefcase className="w-3 h-3" /> Roles
                     </label>
-                    <div className="flex flex-wrap gap-2 p-3 rounded-2xl bg-secondary/30 min-h-[48px]">
-                      {roles.map(r => (
-                        <label key={r.id} className="flex items-center gap-2 text-sm cursor-pointer select-none bg-card px-3 py-1.5 rounded-xl border border-border hover:border-primary/50 transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={form.roleIds.includes(r.id)}
-                            onChange={e => {
-                              setForm(f => ({
-                                ...f,
-                                roleIds: e.target.checked
-                                  ? [...f.roleIds, r.id]
-                                  : f.roleIds.filter(id => id !== r.id)
-                              }));
-                            }}
-                            className="rounded"
-                          />
-                          {r.name}
-                        </label>
-                      ))}
+                    <div className="flex flex-wrap gap-2.5 p-4 rounded-2xl bg-secondary/20 min-h-[48px] border border-border/50">
+                      {roles.map(r => {
+                        const isSelected = form.roleIds.includes(r.id);
+                        return (
+                          <label 
+                            key={r.id} 
+                            className={cn(
+                              "flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer select-none transition-all duration-200",
+                              isSelected 
+                                ? "border-primary bg-primary/10 text-primary shadow-sm" 
+                                : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                            )}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={e => {
+                                setForm(f => ({
+                                  ...f,
+                                  roleIds: e.target.checked
+                                    ? [...f.roleIds, r.id]
+                                    : f.roleIds.filter(id => id !== r.id)
+                                }));
+                              }}
+                              className="rounded accent-primary"
+                            />
+                            {r.name}
+                          </label>
+                        );
+                      })}
                       {roles.length === 0 && (
                         <span className="text-muted-foreground text-sm">No roles available</span>
                       )}
@@ -578,15 +585,21 @@ export default function UsersPage() {
                   </div>
 
                   {/* Active */}
-                  <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={form.isActive}
-                      onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
-                      className="rounded"
-                    />
-                    Is Active
-                  </label>
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/15 border border-border/40">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-bold">Account Access</p>
+                      <p className="text-xs text-muted-foreground font-medium">Enable or restrict system privileges</p>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={form.isActive}
+                        onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
+                        className="rounded accent-primary h-4.5 w-4.5 cursor-pointer"
+                      />
+                      <span className="font-black text-xs uppercase tracking-widest">{form.isActive ? 'Active' : 'Inactive'}</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div className="flex gap-4 pt-2">

@@ -217,11 +217,11 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="pt-6 border-t border-border/50 text-center">
+            {/* <div className="pt-6 border-t border-border/50 text-center">
               <p className="text-xs text-muted-foreground font-medium">
                 {t('auth.demoPassword')}: <span className="font-mono font-black text-foreground">password</span>
               </p>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       </div>

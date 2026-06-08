@@ -560,6 +560,36 @@ else if (code === 'ROLES') fetchRoles();
     return Array.from(tabsMap.values());
   }, [masterTypes]);
 
+  const groupedCategories = useMemo(() => {
+    const groups = [
+      {
+        title: "Ticket Routing & Classification",
+        description: "Configure ticket departments, category classifications, and operational access roles.",
+        codes: ['DEPARTMENT', 'CATEGORY', 'SUBCATEGORY', 'ROLES']
+      },
+      {
+        title: "Service Level & Severity",
+        description: "Define SLA configurations, incident priority settings, and impact severities.",
+        codes: ['PRIORITY', 'SEVERITY', 'SLA_CONFIG']
+      },
+      {
+        title: "Channels & System Schedules",
+        description: "Setup origin channels, inbound integration email mailboxes, and corporate holidays.",
+        codes: ['SOURCE', 'EMAIL_CONFIG', 'HOLIDAY']
+      }
+    ];
+
+    return groups.map(g => {
+      const items = allTabs.filter(t => g.codes.includes(t.code) || g.codes.includes(t.id));
+      if (g.codes.includes('DEPARTMENT')) {
+        // Gather any dynamic custom categories not explicitly mapped in other groups
+        const unmapped = allTabs.filter(t => !groups.some(gr => gr.codes.includes(t.code) || gr.codes.includes(t.id)));
+        items.push(...unmapped);
+      }
+      return { ...g, items };
+    });
+  }, [allTabs]);
+
   // ─── Data Helpers ─────────────────────────────────────────────────
 
   const getData = (): MasterDataItem[] => masterItems;
@@ -1576,61 +1606,71 @@ else if (code === 'ROLES') fetchRoles();
       </div>
 
       {!activeTab ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {allTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isTabDynamic = (tab as any).isDynamic;
-            
-            return (
-              <Card
-                key={tab.id}
-                className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50 group relative overflow-hidden"
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start pr-8">
-                        <h3 className="font-semibold text-lg mb-1">{tab.label}</h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{tab.description}</p>
-                    </div>
-                  </div>
+        <div className="space-y-10">
+          {groupedCategories.map((group, groupIdx) => (
+            <div key={groupIdx} className="space-y-4">
+              <div className="border-b border-border/50 pb-2">
+                <h3 className="text-lg font-bold tracking-tight text-foreground/90">{group.title}</h3>
+                <p className="text-xs text-muted-foreground font-semibold">{group.description}</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {group.items.map((tab) => {
+                  const Icon = tab.icon;
+                  const isTabDynamic = (tab as any).isDynamic;
                   
-                  {isTabDynamic && (
-                    <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 hover:bg-primary/20"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingMasterType({ id: tab.id, name: tab.label, code: (tab as any).code });
-                          setShowMasterTypeModal(true);
-                        }}
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteMasterType(tab.id);
-                        }}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                  return (
+                    <Card
+                      key={tab.id}
+                      className="cursor-pointer hover:shadow-xl hover:translate-y-[-2px] transition-all hover:border-primary/40 group relative overflow-hidden bg-card/50 backdrop-blur-xl border border-border/60 rounded-2xl"
+                      onClick={() => setActiveTab(tab.id)}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="p-3.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-inner">
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start pr-8">
+                              <h4 className="font-bold text-base mb-1 text-foreground truncate">{tab.label}</h4>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-semibold line-clamp-2">{tab.description}</p>
+                          </div>
+                        </div>
+                        
+                        {isTabDynamic && (
+                          <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 hover:bg-primary/20"
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingMasterType({ id: tab.id, name: tab.label, code: (tab as any).code });
+                                  setShowMasterTypeModal(true);
+                              }}
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMasterType(tab.id);
+                              }}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <motion.div
