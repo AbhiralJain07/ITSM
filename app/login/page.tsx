@@ -130,6 +130,10 @@ export default function LoginPage() {
             sessionStorage.setItem('accessToken', loginData.elements.accessToken);
             console.log('Access token stored for profile API');
           }
+          if (loginData.elements?.refreshToken) {
+            sessionStorage.setItem('refreshToken', loginData.elements.refreshToken);
+            console.log('Refresh token stored');
+          }
           window.location.href = '/admin';
         } else {
           toast('Session creation failed', 'error');
