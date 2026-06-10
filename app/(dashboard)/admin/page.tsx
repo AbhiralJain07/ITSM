@@ -422,37 +422,37 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
-                      {tickets.slice(0, 5).map((t) => (
+                      {tickets.slice(0, 5).map((ticket) => (
                         <tr 
-                          key={t.id} 
-                          onClick={() => router.push(`/admin/tickets?id=${t.id}`)}
+                          key={ticket.id} 
+                          onClick={() => router.push(`/admin/tickets?id=${ticket.id}`)}
                           className="hover:bg-primary/[0.02] transition-colors cursor-pointer group"
                         >
                           <td className="px-8 py-5">
                             <span className="text-xs font-mono font-black text-primary bg-primary/5 px-2 py-0.5 rounded-lg border border-primary/10">
-                              {t.ticketNumber}
+                              {ticket.ticketNumber}
                             </span>
                           </td>
                           <td className="px-8 py-5">
-                            <p className="font-bold text-sm group-hover:text-primary transition-colors line-clamp-1">{t.title}</p>
-                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">{t.categoryName || 'General'}</p>
+                            <p className="font-bold text-sm group-hover:text-primary transition-colors line-clamp-1">{ticket.title}</p>
+                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">{ticket.categoryName || 'General'}</p>
                           </td>
                           <td className="px-8 py-5">
                             <Badge 
                               variant={
-                                t.priorityName?.toLowerCase().includes('critical') ? 'destructive' : 
-                                t.priorityName?.toLowerCase().includes('high') ? 'warning' : 'secondary'
+                                ticket.priorityName?.toLowerCase().includes('critical') ? 'destructive' : 
+                                ticket.priorityName?.toLowerCase().includes('high') ? 'warning' : 'secondary'
                               }
                               className="px-2 py-0.5 rounded-lg font-black text-[9px] uppercase tracking-wider border-none"
                             >
-                              {t.priorityName || 'Low'}
+                              {ticket.priorityName || 'Low'}
                             </Badge>
                           </td>
                           <td className="px-8 py-5 text-sm font-semibold">
-                            {t.assignedUserName || <span className="text-muted-foreground italic font-normal text-xs">{t('dashboard.unassigned')}</span>}
+                            {ticket.assignedUserName || <span className="text-muted-foreground italic font-normal text-xs">{t('dashboard.unassigned')}</span>}
                           </td>
                           <td className="px-8 py-5 text-xs text-muted-foreground font-medium">
-                            {formatDate(t.createdAt)}
+                            {formatDate(ticket.createdAt)}
                           </td>
                         </tr>
                       ))}
