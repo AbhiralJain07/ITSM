@@ -34,7 +34,6 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
   const [isLanguageLoading, setIsLanguageLoading] = useState(true);
   const [translations, setTranslations] = useState<Translations>({});
   const [supportedLanguages, setSupportedLanguages] = useState(getSupportedLanguages());
-
   const handleSetLanguage = async (language: SupportedLanguage) => {
     setIsLanguageLoading(true);
     try {
@@ -42,26 +41,14 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
       setTranslations(newTranslations);
       setCurrentLanguageState(language);
       
-      // Store preference in localStorage immediately
+      // Store preference in localStorage and cookie immediately
       if (typeof window !== 'undefined') {
         localStorage.setItem('preferred-language', language);
+        document.cookie = `preferred-language=${language}; path=/; max-age=31536000; SameSite=Lax`;
       }
       
-      // Send language selection to external API
-      const cultureName = language.split('-')[0]; // Extract 'en', 'nl', 'fr', 'de', etc.
-      const cultureDisplayNames: Record<string, string> = {
-        'en': 'English',
-        'nl': 'Dutch', 
-        'fr': 'French',
-        'de': 'German',
-        // 'es': 'Spanish',
-        'it': 'Italian'
-      };
-      
-      const cultureDisplayName = cultureDisplayNames[cultureName] || cultureName;
-      
-      // Send to external API (don't wait for it to complete)
-      sendLanguageSelectionToExternalAPI(cultureDisplayName).catch(error => {
+      // Send language selection to external API (pass full culture code)
+      sendLanguageSelectionToExternalAPI(language).catch(error => {
         console.warn('External API call failed, but language was still changed:', error);
       });
       
@@ -147,6 +134,7 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
         // Update localStorage with current language for persistence
         if (typeof window !== 'undefined') {
           localStorage.setItem('preferred-language', language);
+          document.cookie = `preferred-language=${language}; path=/; max-age=31536000; SameSite=Lax`;
         }
       } catch (error) {
         console.error('Failed to initialize language:', error);

@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/context/ToastContext';
 import { apiGet } from '@/lib/client-api';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface TicketItem {
   id: string;
@@ -50,6 +51,7 @@ interface TicketItem {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t, currentLanguage } = useLanguage();
   const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
@@ -138,7 +140,7 @@ export default function AdminDashboardPage() {
       return {
         date: d,
         dayName: days[d.getDay()],
-        dateString: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        dateString: d.toLocaleDateString(currentLanguage, { month: 'short', day: 'numeric' }),
         Opened: 0,
         Resolved: 0
       };
@@ -230,7 +232,7 @@ export default function AdminDashboardPage() {
     if (!dateStr) return '—';
     try {
       const d = new Date(dateStr);
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleDateString(currentLanguage, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     } catch {
       return dateStr;
     }
@@ -257,11 +259,11 @@ export default function AdminDashboardPage() {
       <motion.div variants={itemVariants} className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
         <div className="space-y-1">
           <Badge variant="secondary" className="px-3 py-1 rounded-lg font-black tracking-widest text-[10px] uppercase">
-            Operations Command Center
+            {t('dashboard.opsCenter')}
           </Badge>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tighter">Admin Dashboard</h1>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tighter">{t('dashboard.title')}</h1>
           <p className="text-muted-foreground font-medium text-lg">
-            Operational review, workload analysis, and systems control.
+            {t('dashboard.subtitle')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -269,7 +271,7 @@ export default function AdminDashboardPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
           <Button onClick={() => router.push('/admin/create-ticket')} className="h-12 rounded-2xl px-6 gap-2 font-black shadow-2xl shadow-primary/20">
-            <Plus className="w-5 h-5" /> CREATE INCIDENT
+            <Plus className="w-5 h-5" /> {t('dashboard.createIncident')}
           </Button>
         </div>
       </motion.div>
@@ -277,10 +279,10 @@ export default function AdminDashboardPage() {
       {/* Stats KPI Grid */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Incidents', value: stats.total, icon: Inbox, color: 'text-primary', bg: 'bg-primary/10', glow: 'shadow-primary/5' },
-          { label: 'Active Workload', value: stats.open, icon: Activity, color: 'text-amber-500', bg: 'bg-amber-500/10', glow: 'shadow-amber-500/5' },
-          { label: 'Unassigned Tickets', value: stats.unassigned, icon: UserCheck, color: 'text-indigo-500', bg: 'bg-indigo-500/10', glow: 'shadow-indigo-500/5' },
-          { label: 'SLA Breached', value: stats.breached, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10', glow: 'shadow-destructive/5' },
+          { label: t('dashboard.totalIncidents'), value: stats.total, icon: Inbox, color: 'text-primary', bg: 'bg-primary/10', glow: 'shadow-primary/5' },
+          { label: t('dashboard.activeWorkload'), value: stats.open, icon: Activity, color: 'text-amber-500', bg: 'bg-amber-500/10', glow: 'shadow-amber-500/5' },
+          { label: t('dashboard.unassignedTickets'), value: stats.unassigned, icon: UserCheck, color: 'text-indigo-500', bg: 'bg-indigo-500/10', glow: 'shadow-indigo-500/5' },
+          { label: t('dashboard.slaBreached'), value: stats.breached, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10', glow: 'shadow-destructive/5' },
         ].map((kpi, idx) => (
           <Card key={idx} className={`border-none bg-card/50 backdrop-blur-xl shadow-xl hover:translate-y-[-4px] transition-all duration-300 ${kpi.glow}`}>
             <CardContent className="p-6 md:p-8 flex items-center gap-6">
@@ -305,9 +307,9 @@ export default function AdminDashboardPage() {
           <Card className="border-none shadow-2xl bg-card/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
             <CardHeader className="p-8 pb-2">
               <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
-                <TrendingUp className="w-6 h-6 text-primary" /> Incident Trend Analysis
+                <TrendingUp className="w-6 h-6 text-primary" /> {t('dashboard.trendTitle')}
               </CardTitle>
-              <p className="text-sm text-muted-foreground font-medium">Daily ticket volume distribution over the last 7 days</p>
+              <p className="text-sm text-muted-foreground font-medium">{t('dashboard.trendDesc')}</p>
             </CardHeader>
             <CardContent className="p-8 pt-2">
               <div className="h-[320px] w-full" style={{ height: '320px' }}>
@@ -353,9 +355,9 @@ export default function AdminDashboardPage() {
           <Card className="border-none shadow-2xl bg-card/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
             <CardHeader className="p-8 pb-4">
               <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
-                <Cpu className="w-6 h-6 text-primary" /> Workload by Department
+                <Cpu className="w-6 h-6 text-primary" /> {t('dashboard.deptWorkload')}
               </CardTitle>
-              <p className="text-sm text-muted-foreground font-medium">Incident concentration across organization divisions</p>
+              <p className="text-sm text-muted-foreground font-medium">{t('dashboard.deptDesc')}</p>
             </CardHeader>
             <CardContent className="p-8 pt-2 space-y-6">
               {loading ? (
@@ -363,7 +365,7 @@ export default function AdminDashboardPage() {
                   {[1, 2, 3].map(i => <div key={i} className="h-6 bg-muted/40 rounded-xl animate-pulse" />)}
                 </div>
               ) : stats.departments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No department data recorded.</p>
+                <p className="text-sm text-muted-foreground">{t('dashboard.noDeptData')}</p>
               ) : (
                 stats.departments.map((dept, i) => {
                   const percent = stats.total > 0 ? (dept.count / stats.total) * 100 : 0;
@@ -371,7 +373,7 @@ export default function AdminDashboardPage() {
                     <div key={i} className="space-y-2">
                       <div className="flex justify-between items-center text-sm">
                         <span className="font-bold">{dept.name}</span>
-                        <span className="font-mono font-black text-muted-foreground">{dept.count} active</span>
+                        <span className="font-mono font-black text-muted-foreground">{dept.count} {t('dashboard.active')}</span>
                       </div>
                       <div className="h-3.5 w-full bg-secondary/50 rounded-full overflow-hidden">
                         <div 
@@ -390,11 +392,11 @@ export default function AdminDashboardPage() {
           <Card className="border-none shadow-2xl bg-card/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
             <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-2xl font-black tracking-tight">Recent Incidents</CardTitle>
-                <p className="text-sm text-muted-foreground font-medium">Latest requests requiring review</p>
+                <CardTitle className="text-2xl font-black tracking-tight">{t('dashboard.recentQueue')}</CardTitle>
+                <p className="text-sm text-muted-foreground font-medium">{t('dashboard.recentQueueDesc')}</p>
               </div>
               <Button onClick={() => router.push('/admin/tickets')} variant="outline" className="rounded-xl font-bold gap-2">
-                View Full Queue <ArrowRight className="w-4 h-4" />
+                {t('dashboard.viewQueue')} <ArrowRight className="w-4 h-4" />
               </Button>
             </CardHeader>
             <CardContent className="p-0">
@@ -405,18 +407,18 @@ export default function AdminDashboardPage() {
               ) : tickets.length === 0 ? (
                 <div className="p-16 text-center text-muted-foreground">
                   <Inbox className="w-12 h-12 mx-auto opacity-35 mb-2" />
-                  <p className="font-bold">No active tickets found</p>
+                  <p className="font-bold">{t('dashboard.noTickets')}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-border/50 bg-muted/5">
-                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Reference</th>
-                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Title</th>
-                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Priority</th>
-                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Owner</th>
-                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Created</th>
+                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('dashboard.reference')}</th>
+                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('dashboard.titleColumn')}</th>
+                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('dashboard.priority')}</th>
+                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('dashboard.owner')}</th>
+                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('dashboard.created')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
@@ -447,7 +449,7 @@ export default function AdminDashboardPage() {
                             </Badge>
                           </td>
                           <td className="px-8 py-5 text-sm font-semibold">
-                            {t.assignedUserName || <span className="text-muted-foreground italic font-normal text-xs">Unassigned</span>}
+                            {t.assignedUserName || <span className="text-muted-foreground italic font-normal text-xs">{t('dashboard.unassigned')}</span>}
                           </td>
                           <td className="px-8 py-5 text-xs text-muted-foreground font-medium">
                             {formatDate(t.createdAt)}
@@ -469,16 +471,16 @@ export default function AdminDashboardPage() {
           <Card className="border-none shadow-2xl bg-card/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
             <CardHeader className="p-8 pb-4">
               <CardTitle className="text-xl font-black uppercase tracking-widest flex items-center gap-2">
-                <Server className="w-5 h-5 text-primary" /> Service Integrity
+                <Server className="w-5 h-5 text-primary" /> {t('dashboard.integrity')}
               </CardTitle>
-              <p className="text-sm text-muted-foreground font-medium">Live systems latency & uptime diagnostics</p>
+              <p className="text-sm text-muted-foreground font-medium">{t('dashboard.integrityDesc')}</p>
             </CardHeader>
             <CardContent className="p-8 pt-2 space-y-4">
               {[
-                { name: 'Core API Gateway', latency: `${latencies.api}ms`, status: 'Operational' },
-                { name: 'Inbound Mailbox Sync', latency: `${latencies.mail}ms`, status: 'Operational' },
-                { name: 'Background SLA Engine', latency: `${latencies.sla}ms`, status: 'Operational' },
-                { name: 'Database Clusters', latency: `${latencies.db}ms`, status: 'Operational' },
+                { name: t('dashboard.apiGateway'), latency: `${latencies.api}ms`, status: t('dashboard.operational') },
+                { name: t('dashboard.mailboxSync'), latency: `${latencies.mail}ms`, status: t('dashboard.operational') },
+                { name: t('dashboard.slaEngine'), latency: `${latencies.sla}ms`, status: t('dashboard.operational') },
+                { name: t('dashboard.dbClusters'), latency: `${latencies.db}ms`, status: t('dashboard.operational') },
               ].map((s, idx) => (
                 <div key={idx} className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl border border-border/20">
                   <div className="space-y-0.5">
@@ -498,9 +500,9 @@ export default function AdminDashboardPage() {
           <Card className="border-none shadow-2xl bg-card/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
             <CardHeader className="p-8 pb-4">
               <CardTitle className="text-xl font-black uppercase tracking-widest flex items-center gap-2">
-                <Shield className="w-5 h-5 text-primary" /> Operations Log
+                <Shield className="w-5 h-5 text-primary" /> {t('dashboard.opsLog')}
               </CardTitle>
-              <p className="text-sm text-muted-foreground font-medium">Latest system actions executed</p>
+              <p className="text-sm text-muted-foreground font-medium">{t('dashboard.opsLogDesc')}</p>
             </CardHeader>
             <CardContent className="p-8 pt-2 space-y-4">
               {activityLog.map((log, index) => (
@@ -518,15 +520,15 @@ export default function AdminDashboardPage() {
           <Card className="border-none shadow-2xl bg-card/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
             <CardHeader className="p-8 pb-4">
               <CardTitle className="text-xl font-black uppercase tracking-widest flex items-center gap-2">
-                <Zap className="w-5 h-5 text-primary" /> Admin Controls
+                <Zap className="w-5 h-5 text-primary" /> {t('dashboard.controls')}
               </CardTitle>
-              <p className="text-sm text-muted-foreground font-medium">System Shortcuts</p>
+              <p className="text-sm text-muted-foreground font-medium">{t('dashboard.controlsDesc')}</p>
             </CardHeader>
             <CardContent className="p-8 pt-2 space-y-3">
               {[
-                { label: 'Onboard Team Members', desc: 'Add users & assign roles', path: '/admin/members', icon: Users },
-                { label: 'Configure Master Directories', desc: 'Edit priority, departments & categories', path: '/admin/master-data', icon: Database },
-                { label: 'Operational Analytics', desc: 'Audit SLAs & performance metrics', path: '/admin/analytics', icon: TrendingUp },
+                { label: t('dashboard.onboardMembers'), desc: t('dashboard.onboardDesc'), path: '/admin/members', icon: Users },
+                { label: t('dashboard.configData'), desc: t('dashboard.configDesc'), path: '/admin/master-data', icon: Database },
+                { label: t('dashboard.opsAnalytics'), desc: t('dashboard.analyticsDesc'), path: '/admin/analytics', icon: TrendingUp },
               ].map((shortcut, i) => (
                 <button
                   key={i}

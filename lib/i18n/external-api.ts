@@ -24,13 +24,20 @@ export async function sendLanguageSelectionToExternalAPI(culture: string): Promi
     const requestBody = JSON.stringify({ culture });
     console.log('Sending language selection to external API:', { culture, requestBody });
     
-    // Temporarily use test endpoint for debugging
-    const response = await fetch('http://localhost:3000/api/test/language-post', {
+    const headers: Record<string, string> = {
+      'accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (typeof window !== 'undefined') {
+      const token = sessionStorage.getItem('accessToken');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+
+    const response = await fetch('https://localhost:5001/api/v1/localization/language', {
       method: 'POST',
-      headers: {
-        'accept': 'text/plain',
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: requestBody,
       signal: AbortSignal.timeout(5000), // 5 second timeout
     });

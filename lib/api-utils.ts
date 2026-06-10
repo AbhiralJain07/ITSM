@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { cookies } from 'next/headers';
 
 // Disable TLS verification for local development
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -92,6 +93,26 @@ export async function fetchFromBackend(
 ): Promise<{ data: unknown; ok: boolean; status: number; errorText?: string }> {
   try {
     const headers = getAuthHeaders(token);
+
+    // Retrieve selected language from session or preferred-language cookie
+    let language = 'en-US';
+    try {
+      const cookieStore = await cookies();
+      const preferredLang = cookieStore.get('preferred-language')?.value;
+      if (preferredLang) {
+        language = preferredLang;
+      }
+      const sessionVal = cookieStore.get('itsm_session')?.value;
+      if (sessionVal) {
+        const session = JSON.parse(sessionVal);
+        if (session.language) {
+          language = session.language;
+        }
+      }
+    } catch {}
+
+    headers['Accept-Language'] = language;
+
     const response = await fetch(url, {
       ...options,
       headers: { ...headers, ...options.headers },

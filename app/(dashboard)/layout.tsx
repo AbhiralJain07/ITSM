@@ -35,6 +35,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { CompactLanguageSelector } from '@/components/ui/LanguageSelector';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -43,6 +44,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
   const { user } = useAuth();
+  const { t } = useLanguage();
   const pathname = usePathname();
   const notificationsRef = useRef<HTMLDivElement>(null);
 
@@ -63,34 +65,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const getNavItems = () => {
-    const base = [{ label: 'Dashboard', icon: LayoutDashboard, path: `/${user?.role}` }];
+    const base = [{ label: t('navigation.dashboard'), icon: LayoutDashboard, path: `/${user?.role}` }];
     
     if (user?.role === 'admin') {
       return [
         ...base,
-        { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
-        { label: 'Create Ticket', icon: Plus, path: '/admin/create-ticket' },
-        { label: 'Tickets', icon: Ticket, path: '/admin/tickets' },
-        { label: 'Master Data', icon: Database, path: '/admin/master-data' },
-        { label: 'Manage Users', icon: Users, path: '/admin/members' },
-        { label: 'System Settings', icon: Settings, path: '/admin/settings' },
+        { label: t('navigation.analytics'), icon: BarChart3, path: '/admin/analytics' },
+        { label: t('navigation.createTicket'), icon: Plus, path: '/admin/create-ticket' },
+        { label: t('navigation.tickets'), icon: Ticket, path: '/admin/tickets' },
+        { label: t('navigation.masterData'), icon: Database, path: '/admin/master-data' },
+        { label: t('navigation.manageUsers'), icon: Users, path: '/admin/members' },
+        { label: t('navigation.systemSettings'), icon: Settings, path: '/admin/settings' },
       ];
     }
     
     if (user?.role === 'agent') {
       return [
         ...base,
-        { label: 'My Queue', icon: Zap, path: '/agent/queue' },
-        { label: 'All Incidents', icon: AlertTriangle, path: '/agent/incidents' },
-        { label: 'Knowledge Base', icon: BookOpen, path: '/kb' },
+        { label: t('navigation.myQueue'), icon: Zap, path: '/agent/queue' },
+        { label: t('navigation.allIncidents'), icon: AlertTriangle, path: '/agent/incidents' },
+        { label: t('navigation.knowledge'), icon: BookOpen, path: '/kb' },
       ];
     }
 
     return [
       ...base,
-      { label: 'Create Ticket', icon: Ticket, path: '/user/create-ticket' },
-      { label: 'My Tickets', icon: ClipboardList, path: '/user/tickets' },
-      { label: 'Knowledge Base', icon: BookOpen, path: '/kb' },
+      { label: t('navigation.createTicket'), icon: Ticket, path: '/user/create-ticket' },
+      { label: t('navigation.myTickets'), icon: ClipboardList, path: '/user/tickets' },
+      { label: t('navigation.knowledge'), icon: BookOpen, path: '/kb' },
     ];
   };
 
@@ -169,7 +171,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className={cn('p-1.5 rounded-lg bg-secondary group-hover:bg-primary/10 group-hover:text-primary transition-colors')}>
               <ChevronRight className={cn('w-4 h-4 transition-transform duration-500', !isSidebarCollapsed && 'rotate-180')} />
             </div>
-            {!isSidebarCollapsed && <span className="text-xs font-black uppercase tracking-widest">Collapse</span>}
+            {!isSidebarCollapsed && <span className="text-xs font-black uppercase tracking-widest">{t('navigation.collapse')}</span>}
           </button>
         </div>
       </motion.aside>
@@ -213,8 +215,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       className="absolute right-0 mt-4 w-80 bg-card border border-border rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.25)] z-50 overflow-hidden"
                     >
                       <div className="p-5 border-b border-border flex items-center justify-between bg-muted/20">
-                        <h3 className="font-bold">Notifications</h3>
-                        <Badge variant="info">3 New</Badge>
+                        <h3 className="font-bold">{t('navigation.notifications')}</h3>
+                        <Badge variant="info">3 {t('navigation.new')}</Badge>
                       </div>
                       <div className="max-h-[400px] overflow-y-auto p-2">
                         {notifications.map((n) => (
@@ -259,17 +261,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="absolute right-0 mt-3 w-56 bg-card border border-border rounded-3xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-50 overflow-hidden">
                   <div className="p-2.5">
                     <Link href="/profile" className="w-full flex items-center gap-3 px-4 py-3 text-sm rounded-2xl hover:bg-secondary transition-all font-semibold">
-                      <User className="w-4 h-4" /> My Profile
+                      <User className="w-4 h-4" /> {t('navigation.myProfile')}
                     </Link>
                     <button className="w-full flex items-center gap-3 px-4 py-3 text-sm rounded-2xl hover:bg-secondary transition-all font-semibold">
-                      <Settings className="w-4 h-4" /> Account Settings
+                      <Settings className="w-4 h-4" /> {t('navigation.accountSettings')}
                     </button>
                     <div className="h-px bg-border my-2" />
                     <button onClick={() => logoutAction()} className="w-full flex items-center gap-3 px-4 py-3 text-sm rounded-2xl hover:bg-destructive/10 text-destructive text-left transition-all font-black group/btn">
                       <div className="p-1.5 rounded-lg bg-destructive/10 group-hover/btn:bg-destructive group-hover/btn:text-destructive-foreground transition-colors">
                         <LogOut className="w-3.5 h-3.5" />
                       </div>
-                      Logout
+                      {t('navigation.logout')}
                     </button>
                   </div>
                 </div>

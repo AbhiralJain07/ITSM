@@ -5,6 +5,7 @@ import { Globe, ChevronDown } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 import { useLanguage } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function LanguageSelector({ className }: { className?: string }) {
   const { currentLanguage, setLanguage, supportedLanguages, t, isLanguageLoading } = useLanguage();
@@ -153,13 +154,12 @@ export function CompactLanguageSelector({ className }: { className?: string }) {
   if (isLanguageLoading) {
     return (
       <button className={cn(
-        "flex items-center gap-2 px-3 py-2 rounded-lg bg-background/50 border border-border/50",
-        "text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200",
-        "shadow-sm hover:shadow-md",
+        "flex items-center gap-2 px-3 py-2 rounded-xl bg-card/60 backdrop-blur-md border border-border/50",
+        "text-muted-foreground transition-all duration-200 min-w-[100px] justify-center",
         className
-      )}>
-        <Globe className="w-4 h-4" />
-        <span className="text-sm font-medium">EN</span>
+      )} disabled>
+        <Globe className="w-4 h-4 animate-spin text-primary/60" />
+        <span className="text-xs font-bold uppercase tracking-wider">EN</span>
       </button>
     );
   }
@@ -180,66 +180,76 @@ export function CompactLanguageSelector({ className }: { className?: string }) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg bg-background/50 border border-border/50",
-          "text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200",
-          "shadow-sm hover:shadow-md",
-          "min-w-[100px] justify-center"
+          "flex items-center gap-2 px-3 py-2 rounded-xl bg-card/60 backdrop-blur-md border border-border/50",
+          "text-foreground/80 hover:text-primary hover:bg-primary/5 hover:border-primary/20 transition-all duration-300",
+          "shadow-xs hover:shadow-md cursor-pointer",
+          "min-w-[100px] justify-center font-bold"
         )}
       >
-        <Globe className="w-4 h-4" />
-        <span className="text-sm font-medium">{flagEmojis[shortCode] || '🌐'} {shortCode}</span>
-        <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", isOpen && "rotate-180")} />
+        <Globe className="w-4 h-4 text-primary" />
+        <span className="text-xs uppercase tracking-wider">{flagEmojis[shortCode] || '🌐'} {shortCode}</span>
+        <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform duration-300", isOpen && "rotate-180")} />
       </button>
 
-      {isOpen && (
-        <>
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="absolute right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-xl z-50 min-w-[200px] overflow-hidden">
-            <div className="px-3 py-2 bg-muted/50 border-b border-border/50">
-              <p className="text-xs font-medium text-muted-foreground">{t('language.selectLanguage')}</p>
-            </div>
-            <div className="py-1">
-              {supportedLanguages.map((lang) => {
-                const langShortCode = lang.culture.split('-')[0];
-                return (
-                  <button
-                    key={lang.culture}
-                    onClick={() => {
-                      setLanguage(lang.culture as any);
-                      setIsOpen(false);
-                    }}
-                    className={cn(
-                      "w-full px-3 py-3 text-left text-sm transition-colors",
-                      "flex items-center gap-3",
-                      "hover:bg-accent/80",
-                      lang.culture === currentLanguage && "bg-accent text-primary font-medium"
-                    )}
-                  >
-                    <span className="text-lg">{flagEmojis[langShortCode] || '🌐'}</span>
-                    <div className="flex-1">
-                      <div className={cn(
-                        "font-medium",
-                        lang.culture === currentLanguage ? "text-primary" : "text-foreground"
-                      )}>
-                        {lang.displayName}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <div 
+              className="fixed inset-0 z-40 bg-black/5 backdrop-blur-[1px]" 
+              onClick={() => setIsOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="absolute right-0 top-full mt-2 bg-card/90 backdrop-blur-xl border border-border/80 rounded-2xl shadow-2xl z-50 min-w-[220px] overflow-hidden"
+            >
+              <div className="px-4 py-2.5 bg-gradient-to-r from-primary/10 to-primary/5 border-b border-border/60">
+                <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">{t('language.selectLanguage')}</p>
+              </div>
+              <div className="py-1">
+                {supportedLanguages.map((lang) => {
+                  const langShortCode = lang.culture.split('-')[0];
+                  return (
+                    <motion.button
+                      whileHover={{ scale: 1.01, x: 2 }}
+                      whileTap={{ scale: 0.99 }}
+                      key={lang.culture}
+                      onClick={() => {
+                        setLanguage(lang.culture as any);
+                        setIsOpen(false);
+                      }}
+                      className={cn(
+                        "w-full px-4 py-3 text-left text-sm transition-all duration-200",
+                        "flex items-center gap-3 border-none outline-none cursor-pointer",
+                        "hover:bg-primary/5 hover:text-primary",
+                        lang.culture === currentLanguage ? "bg-primary/10 text-primary font-bold" : "text-foreground"
+                      )}
+                    >
+                      <span className="text-lg">{flagEmojis[langShortCode] || '🌐'}</span>
+                      <div className="flex-1">
+                        <div className={cn(
+                          "font-bold text-xs text-left",
+                          lang.culture === currentLanguage ? "text-primary" : "text-foreground"
+                        )}>
+                          {lang.displayName}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground font-semibold text-left">
+                          {langShortCode.toUpperCase()}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {langShortCode.toUpperCase()}
-                      </div>
-                    </div>
-                    {lang.culture === currentLanguage && (
-                      <span className="text-primary text-sm">✓</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
+                      {lang.culture === currentLanguage && (
+                        <span className="text-primary text-xs font-black">✓</span>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

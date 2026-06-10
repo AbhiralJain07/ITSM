@@ -64,9 +64,15 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update session with new language
-    // Note: This is a simplified approach. In production, you might want to
-    // update the session in your database or session store
     console.log('Updating session language to:', language);
+    await createSession({
+      id: session.id,
+      name: session.name,
+      email: session.email,
+      role: session.role,
+      company: session.company,
+      language: language
+    });
 
     return NextResponse.json({ success: true, language });
   } catch (error) {
