@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession, createSession } from '@/lib/session';
+import { getSession, createSession, deleteSession } from '@/lib/session';
 
 export async function GET(request: NextRequest) {
   try {
@@ -78,5 +78,15 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error('Error updating session:', error);
     return NextResponse.json({ error: 'Failed to update session' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await deleteSession();
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Session deletion error:', error);
+    return NextResponse.json({ error: 'Session deletion failed' }, { status: 500 });
   }
 }

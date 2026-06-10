@@ -32,6 +32,19 @@ export interface ApiResponse<T = unknown> {
 
 let refreshPromise: Promise<string | null> | null = null;
 
+async function clearSessionAndRedirect() {
+  if (typeof window !== 'undefined') {
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+    try {
+      await fetch('/api/auth/session', { method: 'DELETE' });
+    } catch (e) {
+      console.warn('Failed to call delete session API:', e);
+    }
+    window.location.href = '/login';
+  }
+}
+
 async function handleTokenRefresh(): Promise<string | null> {
   if (refreshPromise) {
     return refreshPromise;
@@ -39,11 +52,7 @@ async function handleTokenRefresh(): Promise<string | null> {
 
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('accessToken');
-      sessionStorage.removeItem('refreshToken');
-      window.location.href = '/login';
-    }
+    clearSessionAndRedirect();
     return null;
   }
 
@@ -78,11 +87,7 @@ async function handleTokenRefresh(): Promise<string | null> {
       throw new Error('Invalid token structure in refresh response');
     } catch (error) {
       console.error('Failed to refresh authentication token:', error);
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('accessToken');
-        sessionStorage.removeItem('refreshToken');
-        window.location.href = '/login';
-      }
+      await clearSessionAndRedirect();
       return null;
     } finally {
       refreshPromise = null;
