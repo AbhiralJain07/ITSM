@@ -99,6 +99,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = getNavItems();
 
   const isLinkActive = (path: string) => {
+    if (path === `/${user?.role}`) return pathname === path;
     if (path === '/' && pathname !== '/') return false;
     return pathname.startsWith(path);
   };

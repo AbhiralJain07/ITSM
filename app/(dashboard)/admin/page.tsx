@@ -134,32 +134,8 @@ export default function AdminDashboardPage() {
   // Compute dynamic trends for Recharts based on actual tickets
   const chartData = React.useMemo(() => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const last7Days = Array.from({ length: 7 }).map((_, idx) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (6 - idx));
-      return {
-        date: d,
-        dayName: days[d.getDay()],
-        dateString: d.toLocaleDateString(currentLanguage, { month: 'short', day: 'numeric' }),
-        Opened: 0,
-        Resolved: 0
-      };
-    });
-
-    tickets.forEach(t => {
-      const ticketDate = new Date(t.createdAt);
-      const match = last7Days.find(day => day.date.toDateString() === ticketDate.toDateString());
-      if (match) {
-        match.Opened++;
-        if (['resolved', 'closed'].some(k => t.statusCode?.toLowerCase().includes(k))) {
-          match.Resolved++;
-        }
-      }
-    });
-
-    // If all dates are 0 (e.g. local backend data is empty or outside last 7 days), populate fallback dummy stats for display
-    const hasData = last7Days.some(d => d.Opened > 0 || d.Resolved > 0);
-    if (!hasData) {
+    
+    if (tickets.length === 0) {
       return [
         { name: 'Mon', Opened: 4, Resolved: 2, date: 'Jun 1' },
         { name: 'Tue', Opened: 6, Resolved: 5, date: 'Jun 2' },
@@ -171,13 +147,40 @@ export default function AdminDashboardPage() {
       ];
     }
 
+    // Sort tickets by creation date to find the date range
+    const sortedTickets = [...tickets].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const latestDate = new Date(sortedTickets[sortedTickets.length - 1].createdAt);
+
+    const last7Days = Array.from({ length: 7 }).map((_, idx) => {
+      const d = new Date(latestDate);
+      d.setDate(d.getDate() - (6 - idx));
+      return {
+        date: d,
+        dayName: days[d.getDay()],
+        dateString: d.toLocaleDateString(currentLanguage, { month: 'short', day: 'numeric' }),
+        Opened: 0,
+        Resolved: 0
+      };
+    });
+
+    tickets.forEach(ticket => {
+      const ticketDate = new Date(ticket.createdAt);
+      const match = last7Days.find(day => day.date.toDateString() === ticketDate.toDateString());
+      if (match) {
+        match.Opened++;
+        if (['resolved', 'closed'].some(k => ticket.statusCode?.toLowerCase().includes(k))) {
+          match.Resolved++;
+        }
+      }
+    });
+
     return last7Days.map(d => ({
       name: d.dayName,
       date: d.dateString,
       Opened: d.Opened,
       Resolved: d.Resolved
     }));
-  }, [tickets]);
+  }, [tickets, currentLanguage]);
 
   // Generate audit activity log based on actual ticket conditions
   const activityLog = React.useMemo(() => {
@@ -340,8 +343,8 @@ export default function AdminDashboardPage() {
                       <Tooltip 
                         contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '16px', fontWeight: 'bold' }}
                       />
-                      <Area type="monotone" dataKey="Opened" stroke="hsl(var(--primary))" strokeWidth={3.5} fillOpacity={1} fill="url(#openedGradient)" />
-                      <Area type="monotone" dataKey="Resolved" stroke="#10b981" strokeWidth={3.5} fillOpacity={1} fill="url(#resolvedGradient)" />
+                      <Area type="monotone" dataKey="Opened" stroke="hsl(var(--primary))" strokeWidth={3.5} fillOpacity={1} fill="url(#openedGradient)" dot={{ stroke: 'hsl(var(--primary))', strokeWidth: 1.5, r: 3.5, fill: 'hsl(var(--background))' }} activeDot={{ r: 6, strokeWidth: 0, fill: 'hsl(var(--primary))' }} />
+                      <Area type="monotone" dataKey="Resolved" stroke="#10b981" strokeWidth={3.5} fillOpacity={1} fill="url(#resolvedGradient)" dot={{ stroke: '#10b981', strokeWidth: 1.5, r: 3.5, fill: 'hsl(var(--background))' }} activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
