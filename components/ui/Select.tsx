@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SelectOption {
@@ -94,46 +94,58 @@ export function Select({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "w-full h-12 px-4 rounded-xl bg-background/50 border border-border/40 shadow-inner",
-          "flex items-center justify-between text-left text-sm font-medium",
-          "focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary",
-          "hover:bg-background/80 transition-all duration-200",
+          "w-full h-12 px-4 rounded-xl bg-white border border-[#CBD5E1] shadow-sm",
+          "flex items-center justify-between text-left text-sm font-medium transition-all duration-200",
+          "hover:border-[#1E40AF] active:scale-[0.985]",
+          "focus:outline-none focus:ring-4 focus:ring-[#1E40AF]/15 focus:border-[#1E40AF]",
           disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
         )}
       >
         <span className={cn(
           "truncate",
-          selectedOption ? "text-foreground" : "text-muted-foreground"
+          selectedOption ? "text-[#0F172A]" : "text-[#64748B]"
         )}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown 
           className={cn(
-            "w-4 h-4 text-muted-foreground transition-transform duration-200",
+            "w-4 h-4 text-[#64748B] transition-transform duration-200",
             isOpen && "rotate-180"
           )} 
         />
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="max-h-60 overflow-y-auto">
-            {options.map((option, index) => (
-              <button
-                key={`${option.value}-${index}`}
-                type="button"
-                onClick={() => handleOptionClick(option.value)}
-                className={cn(
-                  "w-full px-4 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                  "focus:outline-none",
-                  highlightedIndex === index ? "bg-secondary text-foreground" : "text-foreground/80",
-                  "hover:bg-secondary hover:text-foreground",
-                  option.value === value && "bg-primary/10 text-primary font-semibold hover:bg-primary/15"
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
+        <div className="absolute z-50 w-full mt-1 bg-white border border-[#CBD5E1] rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            {options.map((option, index) => {
+              const isSelected = option.value === value;
+              const isHighlighted = highlightedIndex === index;
+              
+              return (
+                <button
+                  key={`${option.value}-${index}`}
+                  type="button"
+                  onClick={() => handleOptionClick(option.value)}
+                  className={cn(
+                    "w-full px-4 py-2.5 text-left text-sm font-medium transition-all duration-100",
+                    "flex items-center justify-between gap-2",
+                    "active:scale-[0.99] active:opacity-90",
+                    "focus:outline-none",
+                    isSelected 
+                      ? "bg-[#DBEAFE] text-[#1E40AF] font-semibold" 
+                      : isHighlighted 
+                        ? "bg-[#EFF6FF] text-[#0F172A]" 
+                        : "text-[#0F172A] hover:bg-[#EFF6FF] hover:text-[#0F172A]"
+                  )}
+                >
+                  <span className="truncate">{option.label}</span>
+                  {isSelected && (
+                    <Check className="w-4 h-4 text-[#1E40AF] shrink-0 animate-in zoom-in-75 duration-150" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

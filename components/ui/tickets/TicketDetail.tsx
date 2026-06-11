@@ -239,8 +239,12 @@ export function TicketDetail({
           {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
-          <Button variant="ghost" onClick={() => router.push(backPath)}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back
+          <Button 
+            variant="outline" 
+            onClick={() => router.push(backPath)} 
+            className="group gap-2 h-9 text-xs font-semibold border-slate-200 bg-white text-slate-600 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50/50 focus:outline-none focus:ring-2 focus:ring-rose-500/15 active:scale-[0.96] transition-all duration-200 shadow-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-500 group-hover:-translate-x-0.5 transition-transform duration-300" /> Back
           </Button>
           <div>
             <div className="flex items-center gap-3 mb-1">
@@ -255,8 +259,12 @@ export function TicketDetail({
             <p className="text-muted-foreground text-sm mt-1">Created {formatDate(ticket.createdAt)}</p>
           </div>
         </div>
-        <Button variant="outline" onClick={fetchTicket} className="gap-2">
-          <RefreshCw className="w-4 h-4" /> Refresh
+        <Button 
+          variant="outline" 
+          onClick={fetchTicket} 
+          className="group gap-2 h-9 text-xs font-semibold border-slate-200 bg-white text-slate-600 hover:text-[#1E40AF] hover:border-[#1E40AF]/40 hover:bg-[#EFF6FF]/60 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/15 active:scale-[0.96] transition-all duration-200 shadow-sm"
+        >
+          <RefreshCw className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1E40AF] group-hover:rotate-180 transition-transform duration-500 ease-out" /> Refresh
         </Button>
       </div>
 

@@ -19,8 +19,8 @@ export const Button: React.FC<ButtonProps> = ({
   const variants = {
     primary: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm',
     secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-    outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-    ghost: 'hover:bg-accent hover:text-accent-foreground',
+    outline: 'border border-input bg-background text-slate-700 dark:text-slate-200 hover:bg-accent hover:text-accent-foreground',
+    ghost: 'text-slate-700 dark:text-slate-200 hover:bg-accent hover:text-accent-foreground',
     danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
   };
 
