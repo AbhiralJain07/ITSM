@@ -457,16 +457,16 @@ export default function TicketDetailPage() {
                 <Button 
                   variant="outline" 
                   onClick={fetchTicket} 
-                  className="group gap-2 h-9 text-xs font-semibold border-slate-200 bg-white text-slate-600 hover:text-[#1E40AF] hover:border-[#1E40AF]/40 hover:bg-[#EFF6FF]/60 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/15 active:scale-[0.96] transition-all duration-200 shadow-sm"
+                  className="group gap-2 h-9 text-xs font-semibold border-slate-200 bg-white text-slate-600 dark:text-slate-600 dark:bg-white dark:border-slate-200 hover:text-[#1E40AF] dark:hover:text-[#1E40AF] hover:border-[#1E40AF]/40 dark:hover:border-[#1E40AF]/40 hover:bg-[#EFF6FF]/60 dark:hover:bg-[#EFF6FF]/60 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/15 active:scale-[0.96] transition-all duration-200 shadow-sm"
                 >
-                  <RefreshCw className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1E40AF] group-hover:rotate-180 transition-transform duration-500 ease-out" /> Refresh
+                  <RefreshCw className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400 group-hover:text-[#1E40AF] dark:group-hover:text-[#1E40AF] group-hover:rotate-180 transition-transform duration-500 ease-out" /> Refresh
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => router.back()} 
-                  className="group gap-2 h-9 text-xs font-semibold border-slate-200 bg-white text-slate-600 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50/50 focus:outline-none focus:ring-2 focus:ring-rose-500/15 active:scale-[0.96] transition-all duration-200 shadow-sm"
+                  className="group gap-2 h-9 text-xs font-semibold border-slate-200 bg-white text-slate-600 dark:text-slate-600 dark:bg-white dark:border-slate-200 hover:text-rose-600 dark:hover:text-rose-600 hover:border-rose-200 dark:hover:border-rose-200 hover:bg-rose-50/50 dark:hover:bg-rose-50/50 focus:outline-none focus:ring-2 focus:ring-rose-500/15 active:scale-[0.96] transition-all duration-200 shadow-sm"
                 >
-                  <X className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-500 group-hover:rotate-90 transition-transform duration-300 ease-out" /> Close
+                  <X className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400 group-hover:text-rose-500 dark:group-hover:text-rose-500 group-hover:rotate-90 transition-transform duration-300 ease-out" /> Close
                 </Button>
               </div>
             </div>
@@ -648,35 +648,41 @@ export default function TicketDetailPage() {
                   </CardHeader>
                   <CardContent className="p-4 space-y-3">
                     <Button
-                      variant={showEditPanel ? "primary" : "secondary"}
+                      variant={showEditPanel ? "primary" : "outline"}
                       onClick={() => setShowEditPanel(prev => !prev)}
-                      className={`w-full justify-start gap-3 h-10 px-4 font-semibold text-sm rounded-xl transition-all duration-150 ${
-                        showEditPanel ? 'shadow-md' : 'border border-slate-200/50 text-slate-700 hover:text-slate-900'
+                      className={`group w-full justify-start gap-3 h-10 px-4 font-semibold text-sm rounded-xl transition-all duration-200 active:scale-[0.98] ${
+                        showEditPanel 
+                          ? 'bg-primary text-white border-primary shadow-sm' 
+                          : 'border-slate-200 bg-white text-slate-600 dark:text-slate-600 dark:bg-white dark:border-slate-200 hover:text-[#1E40AF] dark:hover:text-[#1E40AF] hover:border-[#1E40AF]/40 dark:hover:border-[#1E40AF]/40 hover:bg-[#EFF6FF]/60 dark:hover:bg-[#EFF6FF]/60 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/15'
                       }`}
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className={`w-4 h-4 transition-transform duration-200 ${showEditPanel ? 'text-white' : 'text-slate-400 dark:text-slate-400 group-hover:text-[#1E40AF] dark:group-hover:text-[#1E40AF] group-hover:rotate-12 group-hover:translate-x-0.5'}`} />
                       <span>{showEditPanel ? 'Hide Edit Ticket' : 'Edit Ticket'}</span>
                     </Button>
 
                     <Button
                       onClick={() => setShowStatusPanel(prev => !prev)}
-                      variant={showStatusPanel ? "primary" : "secondary"}
-                      className={`w-full justify-start gap-3 h-10 px-4 font-semibold text-sm rounded-xl transition-all duration-150 ${
-                        showStatusPanel ? 'shadow-md' : 'border border-slate-200/50 text-slate-700 hover:text-slate-900'
+                      variant={showStatusPanel ? "primary" : "outline"}
+                      className={`group w-full justify-start gap-3 h-10 px-4 font-semibold text-sm rounded-xl transition-all duration-200 active:scale-[0.98] ${
+                        showStatusPanel 
+                          ? 'bg-primary text-white border-primary shadow-sm' 
+                          : 'border-slate-200 bg-white text-slate-600 dark:text-slate-600 dark:bg-white dark:border-slate-200 hover:text-[#1E40AF] dark:hover:text-[#1E40AF] hover:border-[#1E40AF]/40 dark:hover:border-[#1E40AF]/40 hover:bg-[#EFF6FF]/60 dark:hover:bg-[#EFF6FF]/60 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/15'
                       }`}
                     >
-                      <Activity className="w-4 h-4" />
+                      <Activity className={`w-4 h-4 transition-transform duration-200 ${showStatusPanel ? 'text-white' : 'text-slate-400 dark:text-slate-400 group-hover:text-[#1E40AF] dark:group-hover:text-[#1E40AF] group-hover:scale-110'}`} />
                       <span>{showStatusPanel ? 'Hide Change Status' : 'Change Status'}</span>
                     </Button>
 
                     <Button
                       onClick={() => setShowAssignPanel(prev => !prev)}
-                      variant={showAssignPanel ? "primary" : "secondary"}
-                      className={`w-full justify-start gap-3 h-10 px-4 font-semibold text-sm rounded-xl transition-all duration-150 ${
-                        showAssignPanel ? 'shadow-md' : 'border border-slate-200/50 text-slate-700 hover:text-slate-900'
+                      variant={showAssignPanel ? "primary" : "outline"}
+                      className={`group w-full justify-start gap-3 h-10 px-4 font-semibold text-sm rounded-xl transition-all duration-200 active:scale-[0.98] ${
+                        showAssignPanel 
+                          ? 'bg-primary text-white border-primary shadow-sm' 
+                          : 'border-slate-200 bg-white text-slate-600 dark:text-slate-600 dark:bg-white dark:border-slate-200 hover:text-[#1E40AF] dark:hover:text-[#1E40AF] hover:border-[#1E40AF]/40 dark:hover:border-[#1E40AF]/40 hover:bg-[#EFF6FF]/60 dark:hover:bg-[#EFF6FF]/60 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/15'
                       }`}
                     >
-                      <UserCheck className="w-4 h-4" />
+                      <UserCheck className={`w-4 h-4 transition-transform duration-200 ${showAssignPanel ? 'text-white' : 'text-slate-400 dark:text-slate-400 group-hover:text-[#1E40AF] dark:group-hover:text-[#1E40AF] group-hover:-translate-y-0.5'}`} />
                       <span>{showAssignPanel ? 'Hide Assign Ticket' : 'Assign Ticket'}</span>
                     </Button>
                   </CardContent>
