@@ -94,9 +94,10 @@ export function Select({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "w-full h-12 px-4 rounded-xl bg-background/50 border-none shadow-inner",
-          "flex items-center justify-between text-left",
-          "focus:outline-none focus:ring-2 focus:ring-primary/50",
+          "w-full h-12 px-4 rounded-xl bg-background/50 border border-border/40 shadow-inner",
+          "flex items-center justify-between text-left text-sm font-medium",
+          "focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary",
+          "hover:bg-background/80 transition-all duration-200",
           disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
         )}
       >
@@ -115,7 +116,7 @@ export function Select({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="max-h-60 overflow-y-auto">
             {options.map((option, index) => (
               <button
@@ -123,10 +124,11 @@ export function Select({
                 type="button"
                 onClick={() => handleOptionClick(option.value)}
                 className={cn(
-                  "w-full px-4 py-3 text-left hover:bg-accent transition-colors",
-                  "focus:bg-accent focus:outline-none",
-                  highlightedIndex === index && "bg-accent",
-                  option.value === value && "bg-primary/10 text-primary font-medium"
+                  "w-full px-4 py-2.5 text-left text-sm font-medium transition-colors duration-150",
+                  "focus:outline-none",
+                  highlightedIndex === index ? "bg-secondary text-foreground" : "text-foreground/80",
+                  "hover:bg-secondary hover:text-foreground",
+                  option.value === value && "bg-primary/10 text-primary font-semibold hover:bg-primary/15"
                 )}
               >
                 {option.label}
